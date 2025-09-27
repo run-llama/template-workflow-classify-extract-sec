@@ -1,0 +1,50 @@
+name: CI Lint/Format/Test Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check-python:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+        
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      
+    - name: Run Python checks
+      run: uv run hatch run all-check
+      
+  check-ui:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+
+    - name: Enable Corepack
+      run: corepack enable
+
+    - name: Activate pnpm version
+      working-directory: ui
+      run: corepack prepare --activate
+
+      
+    - name: Run UI checks
+      run: pnpm run all-check
+      working-directory: ui 

@@ -1,0 +1,4 @@
+_exclude:
+  - ".git"
+  - ".github"
+  - "copier.yaml"
