@@ -7,6 +7,14 @@ on:
       - "templates/**"
       - "scripts/**"
       - ".github/templates-remotes.yml"
+  workflow_dispatch:
+    inputs:
+      template_name:
+        description: 'Template name to force mirror (bypasses change detection)'
+        required: true
+        type: choice
+        options:
+          - basic
 
 jobs:
   mirror:
@@ -20,7 +28,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+          git config url."https://x-access-token:${{ secrets.GH_PAT }}@github.com".insteadOf "https://github.com"
 
       - uses: astral-sh/setup-uv@v5
         with:
@@ -28,14 +36,22 @@ jobs:
 
       - id: changes
         name: Detect changed templates (vs before)
+        if: github.event_name == 'push'
         env:
           BEFORE: ${{ github.event.before }}
           SHA: ${{ github.sha }}
         run: |
           uv run tmpl changed --base "$BEFORE" --head "$SHA" --format json --github-output
 
-      - name: Mirror changed templates
-        if: steps.changes.outputs.has_changes == 'true'
+      - name: Set manual template for workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          echo "json=[\"${{ github.event.inputs.template_name }}\"]" >> $GITHUB_OUTPUT
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+        id: manual
+
+      - name: Mirror changed templates (automatic)
+        if: github.event_name == 'push' && steps.changes.outputs.has_changes == 'true'
         env:
           CHANGED_JSON: ${{ steps.changes.outputs.json }}
         run: |
@@ -44,6 +60,16 @@ jobs:
             uv run tmpl mirror "$t"
           done
 
+      - name: Mirror template (manual)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          CHANGED_JSON: ${{ steps.manual.outputs.json }}
+        run: |
+          echo "$CHANGED_JSON" | jq -r '.[]' | while read -r t; do
+            echo "Force mirroring $t"
+            uv run tmpl mirror "$t"
+          done
+
       - name: No changes to mirror
-        if: steps.changes.outputs.has_changes != 'true'
+        if: github.event_name == 'push' && steps.changes.outputs.has_changes != 'true'
         run: echo "No template changes detected. Skipping mirroring."
