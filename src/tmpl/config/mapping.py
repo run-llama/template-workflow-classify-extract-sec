@@ -12,6 +12,7 @@ from .settings import MAPPING_FILE
 
 class TemplatesMapping(TypedDict):
     """Configuration for a template mapping."""
+
     remote: str  # tpl-wf-document-qa
     url: str  # git@github.com:run-llama/template-workflow-document-qa.git
     branch: str  # main
@@ -24,7 +25,11 @@ def load_mapping(path: Path) -> Dict[str, TemplatesMapping]:
     templates = data.get("templates", {})
     assert isinstance(templates, dict)
     for k, v in templates.items():
-        templates[k] = TemplatesMapping(**v)
+        templates[k] = TemplatesMapping(
+            remote=v["remote"],
+            url=v["url"],
+            branch=v["branch"],
+        )
     return templates
 
 

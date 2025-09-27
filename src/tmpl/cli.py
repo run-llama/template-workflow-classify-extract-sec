@@ -24,6 +24,7 @@ from .templates import (
 )
 from .sync import compare_with_expected_materialized
 from .checks import run_javascript_checks, run_python_checks
+from .init.scripts import init_python_scripts, init_package_json_scripts
 from .utils import console, run_git_command
 
 
@@ -66,7 +67,7 @@ def changed_cmd(
     head = head_ref
     base = base_ref or detect_base_ref(head)
     files = list_changed_files(base, head)
-    changed = templates_from_files(files)
+    changed = templates_from_files(files, list(MAPPING_DATA.keys()))
     if fmt == "json":
         print(json.dumps(changed))
     else:
@@ -120,7 +121,6 @@ def clone_cmd(template_name: str) -> None:
     `git subtree add --prefix templates/<name> <remote> <branch> --squash`.
     """
     clone_templates({template_name: MAPPING_DATA[template_name]})
-
 
 
 @cli.command("regenerate")
@@ -210,3 +210,13 @@ def template_check_template_cmd(
         run_python_checks(test_proj_dir, fix=True)
         run_javascript_checks(test_proj_dir, fix=True)
     compare_with_expected_materialized(template_dir, fix_mode=fix)
+
+
+@cli.command("init-scripts")
+@click.argument("template_name", type=click.Choice(MAPPING_DATA.keys()))
+def init_python_scripts_cmd(template_name: str) -> None:
+    """Initialize development scripts for a template (Python and JavaScript/TypeScript)."""
+    template_dir = get_template_dir(template_name)
+    console.print(f"Working directory: {template_dir}")
+    init_python_scripts(template_name)
+    init_package_json_scripts(template_name)

@@ -7,7 +7,11 @@ import tempfile
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from ..templates import parse_template_variables, render_jinja_string, run_copier_quietly
+from ..templates import (
+    parse_template_variables,
+    render_jinja_string,
+    run_copier_quietly,
+)
 
 
 def _line_has_jinja_markers(line: str) -> bool:

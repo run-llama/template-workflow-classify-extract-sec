@@ -48,7 +48,7 @@ def create_repo(org: str, name: str):
     url = f"{API}/orgs/{org}/repos"
     payload = {
         "name": name,
-        "description": f"Llama Index Workflow Template",
+        "description": "Llama Index Workflow Template",
         "private": False,
         "auto_init": True,
     }

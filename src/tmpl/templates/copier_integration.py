@@ -26,7 +26,7 @@ def run_copier_quietly(src_path: str, dst_path: str, data: Dict[str, str]) -> No
 def parse_template_variables(template_dir: Path) -> Dict[str, str]:
     """Parse template variables using Copier's Jinja environment for a given template."""
     from copier._template import Template
-    
+
     # Read answers from existing materialized project
     template_name = template_dir.name
     root = Path.cwd()

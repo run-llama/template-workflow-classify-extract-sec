@@ -7,7 +7,7 @@ from .validation import map_materialized_to_template_path
 
 __all__ = [
     "parse_template_variables",
-    "run_copier_quietly", 
+    "run_copier_quietly",
     "render_jinja_string",
     "get_template_dir",
     "regenerate_test_proj",

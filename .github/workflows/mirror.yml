@@ -16,23 +16,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up SSH for pushing
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.TEMPLATE_MIRROR_SSH_KEY }}
-
-      - name: Configure Git
+      - name: Configure Git with PAT
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config url."https://x-access-token:${{ secrets.GITHUB_PAT }}@github.com/".insteadOf "https://github.com/"
 
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
 
-      - name: Ensure remotes exist
-        run: |
-          uv run tmpl ensure-remotes --mapping .github/templates-remotes.yml
 
       - id: changes
         name: Detect changed templates (vs before)
@@ -49,7 +42,7 @@ jobs:
         run: |
           echo "$CHANGED_JSON" | jq -r '.[]' | while read -r t; do
             echo "Mirroring $t"
-            uv run tmpl mirror --template "$t" --mapping .github/templates-remotes.yml
+            uv run tmpl mirror "$t"
           done
 
       - name: No changes to mirror

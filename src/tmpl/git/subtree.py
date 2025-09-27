@@ -17,7 +17,7 @@ def mirror_template(template_name: str, config: TemplatesMapping) -> None:
     branch = config.get("branch", "main")
     if not remote or not url:
         raise SystemExit(f"Template {template_name} missing 'remote' or 'url'")
-    
+
     # Ensure the git remote exists and is pointed at the correct URL
     ensure_remote(remote, url)
     prefix = f"templates/{template_name}"
@@ -31,7 +31,7 @@ def merge_template(template_name: str, config: TemplatesMapping) -> None:
     branch = config.get("branch", "main")
     if not remote or not url:
         raise SystemExit(f"Template {template_name} missing 'remote' or 'url'")
-    
+
     ensure_remote(remote, url)
     prefix = f"templates/{template_name}"
     run(["git", "subtree", "pull", "--prefix", prefix, remote, branch, "--squash"])
@@ -42,7 +42,7 @@ def clone_templates(mapping_data: Dict[str, TemplatesMapping]) -> None:
     root = Path.cwd()
     templates_dir = root / "templates"
     templates_dir.mkdir(parents=True, exist_ok=True)
-    
+
     for name, cfg in mapping_data.items():
         url = cfg.get("url")
         remote = cfg.get("remote")
@@ -50,7 +50,7 @@ def clone_templates(mapping_data: Dict[str, TemplatesMapping]) -> None:
         if not url or not remote:
             print(f"Skipping {name}: missing remote or url")
             continue
-        
+
         # Ensure the git remote exists and is pointed at the correct URL
         ensure_remote(remote, url)
         prefix = f"templates/{name}"
@@ -58,6 +58,6 @@ def clone_templates(mapping_data: Dict[str, TemplatesMapping]) -> None:
         if dest.exists():
             print(f"Exists: {dest}")
             continue
-        
+
         # Add the upstream template as a subtree under templates/<name>
         run(["git", "subtree", "add", "--prefix", prefix, remote, branch, "--squash"])

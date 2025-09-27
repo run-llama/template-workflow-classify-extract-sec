@@ -8,7 +8,11 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from ..templates import map_materialized_to_template_path, parse_template_variables, run_copier_quietly
+from ..templates import (
+    map_materialized_to_template_path,
+    parse_template_variables,
+    run_copier_quietly,
+)
 from ..utils import console
 from .comparator import compare_directories
 from .resolver import attempt_chunk_based_jinja_resolution
@@ -37,7 +41,8 @@ def compare_with_expected_materialized(
 
             if not differences:
                 console.print(
-                    "✅ test directory matches expected template output", style="bold green"
+                    "✅ test directory matches expected template output",
+                    style="bold green",
                 )
                 return
 
