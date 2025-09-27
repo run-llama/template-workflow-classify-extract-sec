@@ -10,7 +10,7 @@ from ..utils import run
 from .operations import ensure_remote
 
 
-def mirror_template(template_name: str, config: TemplatesMapping, force: bool = False) -> None:
+def mirror_template(template_name: str, config: TemplatesMapping) -> None:
     """Push the contents of templates/<name> to its upstream repository."""
     remote = config.get("remote")
     url = config.get("url")
@@ -22,8 +22,6 @@ def mirror_template(template_name: str, config: TemplatesMapping, force: bool = 
     ensure_remote(remote, url)
     prefix = f"templates/{template_name}"
     cmd = ["git", "subtree", "push", "--prefix", prefix, remote, branch]
-    if force:
-        cmd.append("--force")
     run(cmd)
 
 

@@ -18,6 +18,23 @@ on:
       - '.github/templates-remotes.yml'
 
 jobs:
+
+
+  root-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Root lint
+        run: |
+          uv run hatch run lint-check
+          uv run hatch run format-check
+          uv run hatch run typecheck
+
   detect:
     runs-on: ubuntu-latest
     outputs:

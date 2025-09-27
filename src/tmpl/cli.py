@@ -83,21 +83,18 @@ def changed_cmd(
 
 @cli.command("mirror")
 @click.argument("template_name", type=click.Choice(MAPPING_DATA.keys()))
-@click.option("--force", is_flag=True, help="Force push to remote (use with caution)")
-def mirror_cmd(template_name: str, force: bool) -> None:
+def mirror_cmd(template_name: str) -> None:
     """
     Push the contents of templates/<name> to its upstream repository.
 
     Ensures the configured remote exists, then runs
     `git subtree push --prefix templates/<name> <remote> <branch>` to mirror
     the template subtree to the external repo/branch.
-    
-    Use --force to force push when there are conflicts (e.g., after squash merges).
     """
     cfg = MAPPING_DATA.get(template_name)
     if not cfg:
         raise SystemExit(f"No mapping found for template: {template_name}")
-    mirror_template(template_name, cfg, force=force)
+    mirror_template(template_name, cfg)
 
 
 @cli.command("merge")

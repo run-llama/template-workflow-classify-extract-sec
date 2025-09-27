@@ -47,7 +47,7 @@ jobs:
 
       - name: Mirror changed templates
         run: |
-          uv run tmpl mirror "basic" --force
+          uv run tmpl mirror "basic"
 
       - name: No changes to mirror
         if: steps.changes.outputs.has_changes != 'true'
