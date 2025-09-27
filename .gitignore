@@ -1,0 +1,7 @@
+# Monorepo templates
+__pycache__/
+*.pyc
+.env
+.venv
+/.copier-answers.yml
+node_modules

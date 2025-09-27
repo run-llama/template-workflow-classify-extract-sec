@@ -1,0 +1,59 @@
+name: mirror-templates
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'templates/**'
+      - 'scripts/**'
+      - '.github/templates-remotes.yml'
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up SSH for pushing
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.TEMPLATE_MIRROR_SSH_KEY }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Ensure remotes exist
+        run: |
+          uv run tmpl ensure-remotes --mapping .github/templates-remotes.yml
+
+      - id: changes
+        name: Detect changed templates (vs before)
+        env:
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          uv run tmpl changed --base "$BEFORE" --head "$SHA" --format json --github-output
+
+      - name: Mirror changed templates
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          CHANGED_JSON: ${{ steps.changes.outputs.json }}
+        run: |
+          echo "$CHANGED_JSON" | jq -r '.[]' | while read -r t; do
+            echo "Mirroring $t"
+            uv run tmpl mirror --template "$t" --mapping .github/templates-remotes.yml
+          done
+
+      - name: No changes to mirror
+        if: steps.changes.outputs.has_changes != 'true'
+        run: echo "No template changes detected. Skipping mirroring."
+
+

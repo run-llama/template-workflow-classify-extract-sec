@@ -1,0 +1,65 @@
+name: templates-ci
+
+on:
+  pull_request:
+    paths:
+      - 'templates/**'
+      - 'harness/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
+      - '.github/templates-remotes.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'templates/**'
+      - 'harness/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
+      - '.github/templates-remotes.yml'
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      changed_json: ${{ steps.changes.outputs.json }}
+      has_changes: ${{ steps.changes.outputs.has_changes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - id: changes
+        name: Detect changed templates
+        run: |
+          uv run tmpl changed --format json --github-output
+
+  validate:
+    needs: detect
+    if: needs.detect.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        template: ${{ fromJSON(needs.detect.outputs.changed_json) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Validate template
+        env:
+          TEMPLATE: ${{ matrix.template }}
+        run: |
+          uv run tmpl regenerate --template "$TEMPLATE"
+          uv run tmpl check-template --template "$TEMPLATE"
+
+  no_changes:
+    needs: detect
+    if: needs.detect.outputs.has_changes != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "No template changes detected. Skipping validation."
