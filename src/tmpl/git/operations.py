@@ -14,8 +14,10 @@ def ensure_remote(name: str, url: str) -> None:
     except subprocess.CalledProcessError:
         current = None
     if current is None:
-        print(f"Adding remote {name} with url {url}")
+        print(f"Adding missing remote {name} -> {url}")
         run(["git", "remote", "add", name, url])
     elif current != url:
-        print(f"Setting remote {name} url to {url}")
+        print(f"Updating remote {name} url to {url}")
         run(["git", "remote", "set-url", name, url])
+    else:
+        print(f"Remote {name} already configured correctly")

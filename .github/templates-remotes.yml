@@ -1,37 +1,37 @@
 templates:
   # data-extraction:
   #   remote: data-extraction
-  #   url: git@github.com:run-llama/template-workflow-data-extraction.git
+  #   url: https://github.com/run-llama/template-workflow-data-extraction.git
   #   branch: main
   # document-qa:
   #   remote: document-qa
-  #   url: git@github.com:run-llama/template-workflow-document-qa.git
+  #   url: https://github.com/run-llama/template-workflow-document-qa.git
   #   branch: main
   # basic-ui:
   #   remote: basic-ui
-  #   url: git@github.com:run-llama/template-workflow-basic-ui.git
+  #   url: https://github.com/run-llama/template-workflow-basic-ui.git
   #   branch: main
   basic:
     remote: basic
-    url: git@github.com:run-llama/template-workflow-basic.git
+    url: https://github.com/run-llama/template-workflow-basic.git
     branch: main
   # document-parsing:
   #   remote: document-parsing
-  #   url: git@github.com:run-llama/template-workflow-document-parsing.git
+  #   url: https://github.com/run-llama/template-workflow-document-parsing.git
   #   branch: main
   # human-in-the-loop:
   #   remote: human-in-the-loop
-  #   url: git@github.com:run-llama/template-workflow-human-in-the-loop.git
+  #   url: https://github.com/run-llama/template-workflow-human-in-the-loop.git
   #   branch: main
   # invoice-extraction:
   #   remote: invoice-extraction
-  #   url: git@github.com:run-llama/template-workflow-invoice-extraction.git
+  #   url: https://github.com/run-llama/template-workflow-invoice-extraction.git
   #   branch: main
   # rag:
   #   remote: rag
-  #   url: git@github.com:run-llama/template-workflow-rag.git
+  #   url: https://github.com/run-llama/template-workflow-rag.git
   #   branch: main
   # web-scraping:
   #   remote: web-scraping
-  #   url: git@github.com:run-llama/template-workflow-web-scraping.git
+  #   url: https://github.com/run-llama/template-workflow-web-scraping.git
   #   branch: main
