@@ -26,6 +26,7 @@ from .sync import compare_with_expected_materialized
 from .checks import run_javascript_checks, run_python_checks
 from .init.scripts import init_python_scripts, init_package_json_scripts
 from .utils import console, run_git_command
+from .metrics.exporter import send_posthog_event, GitHubAuth, get_all_events_for_export
 
 
 @click.group()
@@ -220,3 +221,50 @@ def init_python_scripts_cmd(template_name: str) -> None:
     console.print(f"Working directory: {template_dir}")
     init_python_scripts(template_name)
     init_package_json_scripts(template_name)
+
+
+@cli.command("export-metrics")
+@click.option(
+    "--dry-run", is_flag=True, help="Do not send to PostHog; just print JSON."
+)
+@click.option(
+    "--print", "print_json", is_flag=True, help="Print JSON results to stdout."
+)
+@click.option(
+    "--backfill",
+    is_flag=True,
+    help="Send daily events for all days in the 14-day window.",
+)
+def export_metrics_cmd(dry_run: bool, print_json: bool, backfill: bool) -> None:
+    """Export GitHub metrics for all configured template repositories.
+
+    Requires GITHUB_TOKEN (or GITHUB_PAT). If not --dry-run, also requires
+    POSTHOG_API_KEY and optionally POSTHOG_HOST.
+    """
+    gh_auth = GitHubAuth.from_env()
+    metrics, events = get_all_events_for_export(
+        MAPPING_DATA, github_auth=gh_auth, backfill=backfill
+    )
+
+    if print_json or dry_run:
+        print(json.dumps(metrics))
+
+    # Always print all events that will be/were sent
+    if events:
+        print(
+            f"\n{'DRY RUN - Would send' if dry_run else 'Sending'} {len(events)} events:"
+        )
+        for event in events:
+            template = event.properties.get("template", "unknown")
+            print(
+                f"  - {event.event_name} for {template}"
+                + (f" at {event.timestamp}" if event.timestamp else "")
+            )
+
+    if not dry_run:
+        for event in events:
+            send_posthog_event(
+                event.event_name,
+                event.properties,
+                timestamp=event.timestamp,
+            )

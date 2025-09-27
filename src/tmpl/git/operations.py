@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import subprocess
 
 from ..utils import git_output, run
@@ -10,7 +9,7 @@ from ..utils import git_output, run
 
 def ensure_remote(name: str, url: str) -> None:
     """Ensure a git remote exists with the correct URL."""
-    
+
     try:
         current = git_output(["remote", "get-url", name])
     except subprocess.CalledProcessError:

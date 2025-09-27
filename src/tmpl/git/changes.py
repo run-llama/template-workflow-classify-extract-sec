@@ -26,7 +26,7 @@ def detect_base_ref(head: str) -> str:
             continue
         return git_output(["merge-base", f"origin/{candidate}", head])
 
-    return git_output(["rev-parse", f"{head}~1"])  # type: ignore[no-any-return]
+    return git_output(["rev-parse", f"{head}~1"])  # returns stdout as str
 
 
 def list_changed_files(base: str, head: str) -> List[str]:
