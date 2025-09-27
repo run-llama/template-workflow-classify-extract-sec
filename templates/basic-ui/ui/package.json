@@ -1,0 +1,36 @@
+{
+  "name": "ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit",
+    "format": "prettier --write src",
+    "format-check": "prettier --check src",
+    "all-check": "pnpm i && pnpm run lint && pnpm run format-check && pnpm run build",
+    "all-fix": "pnpm i && pnpm run lint && pnpm run format && pnpm run build"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.8.0"
+  },
+  "devDependencies": {
+    "@llamaindex/ui": "^2.1.1",
+    "@tailwindcss/postcss": "^4",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9",
+    "prettier": "^3.6.2",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vite": "^5.4.8"
+  },
+  "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977"
+}
