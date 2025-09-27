@@ -1,0 +1,49 @@
+[project]
+name = "test-proj"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = []
+requires-python = ">=3.12"
+dependencies = [
+    "llama-index-workflows>=2.2.0,<3.0.0",
+    "llama-cloud-services>=0.6.69",
+    "llama-index-core>=0.14.0,<0.15.0",
+    "llama-index-llms-openai>=0.5.6,<0.6.0",
+    "llama-index-embeddings-openai>=0.5.1,<0.6.0",
+    "python-dotenv>=1.1.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "click==8.1.7",
+    "hatch>=1.14.1",
+    "pytest>=8.4.2",
+    "ruff>=0.13.0",
+    "ty>=0.0.1a20",
+]
+
+[tool.hatch.envs.default.scripts]
+"format" = "ruff format ."
+"format-check" = "ruff format --check ."
+"lint" = "ruff check --fix ."
+"lint-check" = ["ruff check ."]
+typecheck = "ty check src"
+test = "pytest"
+"all-check" = ["format-check", "lint-check", "test"]
+"all-fix" = ["format", "lint", "test"]
+
+[tool.llamadeploy]
+env-files = [".env"]
+llama_cloud = true
+
+[tool.llamadeploy.ui]
+directory = "./ui"
+
+[tool.llamadeploy.workflows]
+upload = "test_proj.qa_workflows:upload"
+chat = "test_proj.qa_workflows:chat"

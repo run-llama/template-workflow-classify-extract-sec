@@ -1,0 +1,10 @@
+test-proj/uv.lock
+.venv
+uv.lock
+expected-proj
+test-proj/.venv
+test-proj/ui/node_modules
+test-proj/ui/pnpm-lock.yaml
+ui/pnpm-lock.yaml
+ui/package-lock.json
+test-proj/ui/package-lock.json
