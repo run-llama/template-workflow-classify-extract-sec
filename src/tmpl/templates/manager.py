@@ -6,13 +6,23 @@ import shutil
 from pathlib import Path
 
 from ..utils import console, run_git_command
-from .copier_integration import parse_template_variables, run_copier_quietly
+from .copier_integration import (
+    parse_template_variables,
+    run_copier_quietly,
+    generate_template_defaults,
+)
 
 
 def get_template_dir(template_name: str) -> Path:
     """Get the directory path for a template."""
-    root = Path.cwd()
+    root = Path(__file__).parent.parent.parent.parent
     return root / "templates" / template_name
+
+
+def get_rendered_dir(template_name: str) -> Path:
+    """Get the directory path for a rendered template."""
+    root = Path(__file__).parent.parent.parent.parent
+    return root / "rendered" / template_name
 
 
 def regenerate_test_proj(template_dir: Path) -> None:
@@ -22,7 +32,11 @@ def regenerate_test_proj(template_dir: Path) -> None:
     root = Path.cwd()
     test_proj_dir: Path = root / "rendered" / template_name
 
-    variables = parse_template_variables(template_dir) if test_proj_dir.exists() else {}
+    variables = (
+        parse_template_variables(template_dir)
+        if test_proj_dir.exists()
+        else generate_template_defaults(template_dir)
+    )
 
     if test_proj_dir.exists():
         console.print(f"Deleting {test_proj_dir}")

@@ -67,13 +67,18 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Enable Corepack
+        run: corepack enable
       - name: Validate template
         env:
           TEMPLATE: ${{ matrix.template }}
         run: |
-          uv run tmpl check-template "$TEMPLATE"
           uv run tmpl check-python "$TEMPLATE"
           uv run tmpl check-javascript "$TEMPLATE"
+          uv run tmpl check-template "$TEMPLATE"
           uv run tmpl check-regeneration "$TEMPLATE"
 
   no_changes:

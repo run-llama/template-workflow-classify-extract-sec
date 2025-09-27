@@ -3,3 +3,5 @@ workflows.db
 package-lock.json
 node_modules
 uv.lock
+
+.env

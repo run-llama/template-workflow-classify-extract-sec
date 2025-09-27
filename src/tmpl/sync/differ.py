@@ -20,8 +20,15 @@ from .resolver import attempt_chunk_based_jinja_resolution
 
 def compare_with_expected_materialized(
     template_dir: Path, fix_mode: bool = False
-) -> None:
-    """Compare current test directory with freshly generated template for a given template."""
+) -> bool:
+    """Compare current test directory with freshly generated template for a given template.
+
+    Returns:
+        - True if no differences found
+        - True if --fix is enabled and all differences were auto-applied with no
+          remaining manual fixes needed
+        - False otherwise
+    """
     with console.status(
         "[bold green]Generating expected materialized version from current template..."
     ):
@@ -44,7 +51,7 @@ def compare_with_expected_materialized(
                     "✅ test directory matches expected template output",
                     style="bold green",
                 )
-                return
+                return True
 
             console.print(
                 f"\n❌ Found {len(differences)} differences between expected and actual:",
@@ -199,6 +206,10 @@ def compare_with_expected_materialized(
             )
             for materialized_path, template_path in files_needing_manual_fix:
                 console.print(f"  {materialized_path} → {template_path}")
+            return False
+
+        console.print("\n✓ Changes applied to template", style="bold green")
+        return True
     else:
         if files_to_copy or files_needing_manual_fix:
             console.print("\nWould make the following changes:")
@@ -211,3 +222,4 @@ def compare_with_expected_materialized(
             console.print(
                 "\nTo apply changes, run: template check-template <name> --fix"
             )
+        return False

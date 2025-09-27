@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
 import sys
 from typing import Optional
 
@@ -212,7 +211,10 @@ def template_check_template_cmd(
     if fix_format:
         run_python_checks(test_proj_dir, fix=True)
         run_javascript_checks(test_proj_dir, fix=True)
-    compare_with_expected_materialized(template_dir, fix_mode=fix)
+
+    success = compare_with_expected_materialized(template_dir, fix_mode=fix)
+    if not success:
+        raise SystemExit(1)
 
 
 @cli.command("init-scripts")
@@ -294,7 +296,7 @@ def all_cmd(ctx: click.Context, command_name: str, continue_on_error: bool) -> N
         tmpl all mirror --continue-on-error
     """
     # Get any extra arguments passed to the command
-    extra_args = ctx.params.get("args", []) or ctx.args
+    extra_args = ctx.args
 
     template_names = list(MAPPING_DATA.keys())
 
@@ -302,8 +304,9 @@ def all_cmd(ctx: click.Context, command_name: str, continue_on_error: bool) -> N
         console.print("No templates configured.", style="yellow")
         return
 
+    extras_str = " ".join(extra_args) if extra_args else ""
     console.print(
-        f"Running 'tmpl {command_name}' on {len(template_names)} templates..."
+        f"Running 'tmpl {command_name}{(' ' + extras_str) if extras_str else ''}' on {len(template_names)} templates..."
     )
 
     failed_templates = []
@@ -311,21 +314,17 @@ def all_cmd(ctx: click.Context, command_name: str, continue_on_error: bool) -> N
     for template_name in template_names:
         console.print(f"\n📁 Processing template: {template_name}", style="bold blue")
 
-        # Build the command: uv run tmpl <command_name> <template_name> <args...>
-        cmd = ["uv", "run", "tmpl", command_name, template_name] + extra_args
-
+        # Invoke the target subcommand within the same Click app to preserve flag parsing
+        args_for_cmd = [command_name, template_name, *extra_args]
         try:
-            subprocess.run(
-                cmd,
-                check=True,
-                capture_output=False,  # Let output go to stdout/stderr directly
-                text=True,
-            )
+            # Run the subcommand in-process; do not call sys.exit on errors
+            cli.main(args=args_for_cmd, standalone_mode=False)
             console.print(f"✓ {template_name} completed successfully", style="green")
 
-        except subprocess.CalledProcessError as e:
+        except SystemExit as e:
+            exit_code = int(e.code) if isinstance(e.code, int) else 1
             console.print(
-                f"❌ {template_name} failed with exit code {e.returncode}", style="red"
+                f"❌ {template_name} failed with exit code {exit_code}", style="red"
             )
             failed_templates.append(template_name)
 
@@ -337,7 +336,7 @@ def all_cmd(ctx: click.Context, command_name: str, continue_on_error: bool) -> N
                     "Use --continue-on-error to continue processing other templates",
                     style="yellow",
                 )
-                sys.exit(e.returncode)
+                sys.exit(exit_code)
 
         except KeyboardInterrupt:
             console.print(

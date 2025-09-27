@@ -9,7 +9,8 @@ from typing import cast
 
 import tomlkit
 
-from ..templates import get_template_dir
+from tmpl.templates.manager import get_rendered_dir
+
 from ..utils import console
 
 
@@ -20,12 +21,12 @@ def init_python_scripts(template_name: str) -> None:
     1. Adds development dependencies (ty, pytest, ruff, hatch) using uv
     2. Configures hatch commands in pyproject.toml for common development tasks
     """
-    template_dir = get_template_dir(template_name)
-    pyproject_path = template_dir / "pyproject.toml"
+    rendered_dir = get_rendered_dir(template_name)
+    pyproject_path = rendered_dir / "pyproject.toml"
 
     if not pyproject_path.exists():
-        console.print(f"❌ No pyproject.toml found in {template_dir}", style="bold red")
-        return
+        console.print(f"❌ No pyproject.toml found in {rendered_dir}", style="bold red")
+        raise SystemExit(1)
 
     console.print(f"📦 Adding development dependencies to {template_name}")
 
@@ -33,7 +34,7 @@ def init_python_scripts(template_name: str) -> None:
     try:
         subprocess.run(
             ["uv", "add", "--dev", "ty", "pytest", "ruff", "hatch"],
-            cwd=template_dir,
+            cwd=rendered_dir,
             check=True,
             capture_output=True,
             text=True,
@@ -74,10 +75,10 @@ def init_python_scripts(template_name: str) -> None:
     console.print("✓ Hatch commands configured", style="green")
 
     # Ensure test folder exists with placeholder test if needed
-    _ensure_test_folder(template_dir)
+    _ensure_test_folder(rendered_dir)
 
     # Ensure gitignore contains required items
-    _ensure_gitignore_items(template_dir)
+    _ensure_gitignore_items(rendered_dir)
 
 
 def get_table(path: list[str], doc: tomlkit.TOMLDocument) -> tomlkit.TOMLDocument:
@@ -94,8 +95,7 @@ def set_table(
     for p in path[:-1]:
         if p not in doc or not isinstance(doc[p], tomlkit.TOMLDocument):
             doc[p] = tomlkit.table()
-        next_doc = doc[p]
-        assert isinstance(next_doc, tomlkit.TOMLDocument)
+        next_doc = cast(tomlkit.TOMLDocument, doc[p])
         doc = next_doc
     doc[path[-1]] = value
 
@@ -107,12 +107,12 @@ def init_package_json_scripts(template_name: str) -> None:
     1. Adds development dependencies (prettier, typescript) using pnpm
     2. Configures npm scripts in package.json for common development tasks
     """
-    template_dir = get_template_dir(template_name)
-    package_json_path = template_dir / "ui" / "package.json"
+    rendered_dir = get_rendered_dir(template_name)
+    package_json_path = rendered_dir / "ui" / "package.json"
 
     if not package_json_path.exists():
         console.print(
-            f"⚠️ No package.json found in {template_dir}. Ignoring...", style="yellow"
+            f"⚠️ No package.json found in {rendered_dir}. Ignoring...", style="yellow"
         )
         return
 
@@ -121,8 +121,8 @@ def init_package_json_scripts(template_name: str) -> None:
     # Add development dependencies using pnpm
     try:
         subprocess.run(
-            ["pnpm", "add", "--dev", "prettier", "typescript"],
-            cwd=template_dir,
+            ["pnpm", "add", "-D", "prettier", "typescript"],
+            cwd=rendered_dir,
             check=True,
             capture_output=True,
             text=True,
@@ -163,9 +163,6 @@ def init_package_json_scripts(template_name: str) -> None:
             f.write("\n")  # Add trailing newline
 
         console.print("✓ npm scripts configured", style="green")
-        console.print("Available commands:", style="bold")
-        for cmd in npm_scripts:
-            console.print(f"  • pnpm run {cmd}")
 
     except Exception as e:
         console.print(f"❌ Failed to configure npm scripts: {e}", style="bold red")
@@ -173,7 +170,7 @@ def init_package_json_scripts(template_name: str) -> None:
 
 def _ensure_test_folder(template_dir: Path) -> None:
     """Ensure test folder exists with placeholder test if no tests are present."""
-    test_dir = template_dir / "rendered"
+    test_dir = template_dir / "tests"
 
     # Create tests directory if it doesn't exist
     if not test_dir.exists():
@@ -215,7 +212,7 @@ def _ensure_gitignore_items(template_dir: Path) -> None:
     required_items = [
         "workflows.db",
         ".venv",
-        "uv.lock",
+        ".env",
         "package-lock.json",
         "node_modules",
     ]

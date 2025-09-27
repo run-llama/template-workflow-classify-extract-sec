@@ -1,5 +1,7 @@
 .venv
 __pycache__
 uv.lock
-pnpm-lock.yaml
-*.db
+workflows.db
+.env
+package-lock.json
+node_modules

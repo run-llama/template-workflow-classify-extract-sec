@@ -18,11 +18,3 @@ project_name_snake:
   type: str
   default: "{{ project_name.replace('-', '_') }}"
   when: false
-
-_exclude:
-  - "test-proj"
-  - ".git"
-  - ".github"
-  - "copier"
-  - "CONTRIBUTING.md"
-  - "copier.yaml"

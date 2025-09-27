@@ -42,25 +42,19 @@ def run_copier_quietly(src_path: str, dst_path: str, data: Dict[str, str]) -> No
     )
 
 
-def parse_template_variables(template_dir: Path) -> Dict[str, str]:
-    """Parse template variables using Copier's Jinja environment for a given template."""
-
-    # Read answers from existing materialized project
-    template_name = template_dir.name
-    root = Path.cwd()
-    test_proj = root / "rendered" / template_name
-    answers_file = test_proj / ".copier-answers.yml"
-
-    with open(answers_file, "r", encoding="utf-8") as f:
-        answers_data = yaml.safe_load(f)
-        # Filter out copier metadata
-        user_answers = {k: v for k, v in answers_data.items() if not k.startswith("_")}
-
+def generate_template_defaults(
+    template_dir: Path, existing_answers: Dict[str, str] | None = None
+) -> Dict[str, str]:
+    """Generate default values for template variables."""
     # Get template configuration for variable parsing
     template = Template(url=str(template_dir))
 
-    # Build complete variable context by evaluating template defaults
-    result: Dict[str, str] = dict(user_answers)
+    # Start with existing answers or empty dict
+    result: Dict[str, str] = dict(existing_answers) if existing_answers else {}
+
+    # Provide a simple fallback for project_name using the template directory name
+    if "project_name" not in result:
+        result["project_name"] = "test-proj"
 
     # Multiple passes to handle dependencies between computed variables
     max_iterations = 10
@@ -88,3 +82,22 @@ def parse_template_variables(template_dir: Path) -> Dict[str, str]:
         if not changed:
             break
     return result
+
+
+def parse_template_variables(template_dir: Path) -> Dict[str, str]:
+    """Parse template variables using Copier's Jinja environment for a given template."""
+
+    # Read answers from existing materialized project
+    template_name = template_dir.name
+    root = Path.cwd()
+    test_proj = root / "rendered" / template_name
+    answers_file = test_proj / ".copier-answers.yml"
+    if not answers_file.exists():
+        return generate_template_defaults(template_dir)
+
+    with open(answers_file, "r", encoding="utf-8") as f:
+        answers_data = yaml.safe_load(f)
+        # Filter out copier metadata
+        user_answers = {k: v for k, v in answers_data.items() if not k.startswith("_")}
+
+    return generate_template_defaults(template_dir, user_answers)
