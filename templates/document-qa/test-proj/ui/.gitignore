@@ -1,0 +1,4 @@
+node_modules
+dist
+# uses pnpm
+pnpm-lock.yaml
