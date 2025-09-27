@@ -43,8 +43,8 @@ python -m basic.workflow \
 
 ## Customization
 
-- Replace the `EmailClient` logic with your own email sending implementation.
-- Extend the workflow with additional steps or validation as needed.
+- Replace the `EmailClient` logic with your own email sending implementation
+- Extend the workflow with additional steps or validation as needed
 
 ## References
 
