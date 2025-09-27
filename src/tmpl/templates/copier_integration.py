@@ -7,12 +7,31 @@ from typing import Dict
 
 import yaml
 import copier
+from copier._template import Template
 
 from .jinja_utils import render_jinja_string
+from ..utils import run_git_command
+from ..utils import git_output
 
 
 def run_copier_quietly(src_path: str, dst_path: str, data: Dict[str, str]) -> None:
     """Run copier with minimal output."""
+    # Clean gitignored files from source directory before copying
+    src_path_obj = Path(src_path).resolve()
+
+    # Find git repository root
+    try:
+        repo_root = Path(git_output(["rev-parse", "--show-toplevel"])).resolve()
+
+        # Get relative path from repo root to src_path
+        relative_src_path = src_path_obj.relative_to(repo_root)
+
+        # Run git clean on the specific subdirectory
+        run_git_command(["git", "clean", "-Xf", str(relative_src_path)], cwd=repo_root)
+    except (SystemExit, ValueError, OSError):
+        # If git operations fail, continue anyway - this is not critical
+        pass
+
     copier.run_copy(
         src_path=src_path,
         dst_path=dst_path,
@@ -25,12 +44,11 @@ def run_copier_quietly(src_path: str, dst_path: str, data: Dict[str, str]) -> No
 
 def parse_template_variables(template_dir: Path) -> Dict[str, str]:
     """Parse template variables using Copier's Jinja environment for a given template."""
-    from copier._template import Template
 
     # Read answers from existing materialized project
     template_name = template_dir.name
     root = Path.cwd()
-    test_proj = root / "tests" / template_name
+    test_proj = root / "rendered" / template_name
     answers_file = test_proj / ".copier-answers.yml"
 
     with open(answers_file, "r", encoding="utf-8") as f:

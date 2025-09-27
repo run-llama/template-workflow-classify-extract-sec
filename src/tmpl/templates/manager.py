@@ -20,7 +20,7 @@ def regenerate_test_proj(template_dir: Path) -> None:
     # Extract template name from template_dir path (e.g., templates/basic -> basic)
     template_name = template_dir.name
     root = Path.cwd()
-    test_proj_dir: Path = root / "tests" / template_name
+    test_proj_dir: Path = root / "rendered" / template_name
 
     variables = parse_template_variables(template_dir) if test_proj_dir.exists() else {}
 
@@ -46,7 +46,7 @@ def ensure_test_proj_exists(template_dir: Path) -> Path:
     # Extract template name from template_dir path (e.g., templates/basic -> basic)
     template_name = template_dir.name
     root = Path.cwd()
-    test_proj_dir: Path = root / "tests" / template_name
+    test_proj_dir: Path = root / "rendered" / template_name
     if not test_proj_dir.exists():
         console.print(
             f"Error: test directory for {template_name} does not exist. Run 'tmpl regenerate {template_name}' first.",

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict
+import jinja2
 
 from copier._template import Template
 
@@ -13,8 +14,6 @@ def render_jinja_string(
 ) -> str:
     """Render a Jinja template string using Copier's configuration for a template dir."""
     template = Template(url=str(template_dir))
-
-    import jinja2  # local import to avoid hard dependency at import time
 
     jinja_env = jinja2.Environment(
         loader=jinja2.BaseLoader(),

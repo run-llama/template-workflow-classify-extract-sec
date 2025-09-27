@@ -41,5 +41,14 @@ lint = "ruff check --fix ."
 lint-check = ["ruff check ."]
 typecheck = "ty check src"
 test = "pytest"
-all-check = ["format-check", "lint-check", "test"]
-all-fix = ["format", "lint", "test"]
+all-check = ["format-check", "lint-check", "test", "typecheck"]
+all-fix = ["format", "lint", "test", "typecheck"]
+tmpl-all-fix = [
+    "tmpl all check-template --fix",
+    "tmpl all check-python --fix",
+    "tmpl all check-javascript --fix",
+    "tmpl all check-regeneration",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

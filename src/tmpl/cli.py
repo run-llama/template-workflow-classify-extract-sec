@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import sys
 from typing import Optional
 
 import click
@@ -268,3 +270,95 @@ def export_metrics_cmd(dry_run: bool, print_json: bool, backfill: bool) -> None:
                 event.properties,
                 timestamp=event.timestamp,
             )
+
+
+@cli.command(
+    "all", context_settings={"ignore_unknown_options": True, "allow_extra_args": True}
+)
+@click.argument("command_name")
+@click.option(
+    "--continue-on-error",
+    is_flag=True,
+    help="Continue executing on other templates if one fails",
+)
+@click.pass_context
+def all_cmd(ctx: click.Context, command_name: str, continue_on_error: bool) -> None:
+    """Execute a command on all templates.
+
+    Run any tmpl command across all configured templates. The template name
+    will be automatically passed as the first argument to the command.
+
+    Examples:
+        tmpl all check-python --fix
+        tmpl all regenerate
+        tmpl all mirror --continue-on-error
+    """
+    # Get any extra arguments passed to the command
+    extra_args = ctx.params.get("args", []) or ctx.args
+
+    template_names = list(MAPPING_DATA.keys())
+
+    if not template_names:
+        console.print("No templates configured.", style="yellow")
+        return
+
+    console.print(
+        f"Running 'tmpl {command_name}' on {len(template_names)} templates..."
+    )
+
+    failed_templates = []
+
+    for template_name in template_names:
+        console.print(f"\n📁 Processing template: {template_name}", style="bold blue")
+
+        # Build the command: uv run tmpl <command_name> <template_name> <args...>
+        cmd = ["uv", "run", "tmpl", command_name, template_name] + extra_args
+
+        try:
+            subprocess.run(
+                cmd,
+                check=True,
+                capture_output=False,  # Let output go to stdout/stderr directly
+                text=True,
+            )
+            console.print(f"✓ {template_name} completed successfully", style="green")
+
+        except subprocess.CalledProcessError as e:
+            console.print(
+                f"❌ {template_name} failed with exit code {e.returncode}", style="red"
+            )
+            failed_templates.append(template_name)
+
+            if not continue_on_error:
+                console.print(
+                    f"Stopping execution due to failure in {template_name}", style="red"
+                )
+                console.print(
+                    "Use --continue-on-error to continue processing other templates",
+                    style="yellow",
+                )
+                sys.exit(e.returncode)
+
+        except KeyboardInterrupt:
+            console.print(
+                f"\n🛑 Interrupted while processing {template_name}", style="yellow"
+            )
+            sys.exit(130)
+
+    # Summary
+    console.print("\n📊 Summary:", style="bold")
+    successful_count = len(template_names) - len(failed_templates)
+    console.print(
+        f"✓ Successful: {successful_count}/{len(template_names)}", style="green"
+    )
+
+    if failed_templates:
+        console.print(
+            f"❌ Failed: {len(failed_templates)}/{len(template_names)}", style="red"
+        )
+        console.print("Failed templates:", style="red")
+        for template in failed_templates:
+            console.print(f"  - {template}", style="red")
+        sys.exit(1)
+    else:
+        console.print("🎉 All templates processed successfully!", style="bold green")

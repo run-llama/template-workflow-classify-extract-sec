@@ -71,8 +71,10 @@ jobs:
         env:
           TEMPLATE: ${{ matrix.template }}
         run: |
-          uv run tmpl regenerate "$TEMPLATE"
           uv run tmpl check-template "$TEMPLATE"
+          uv run tmpl check-python "$TEMPLATE"
+          uv run tmpl check-javascript "$TEMPLATE"
+          uv run tmpl check-regeneration "$TEMPLATE"
 
   no_changes:
     needs: detect

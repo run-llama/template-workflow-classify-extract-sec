@@ -1,0 +1,5 @@
+workflows.db
+.venv
+package-lock.json
+node_modules
+uv.lock

@@ -16,30 +16,21 @@ Run the workflow from the command line:
 
 ```bash
 python -m basic.workflow \
-  --sender you@mycompany.com \
-  --receiver recipient1@mycompany.com \
-  --receiver recipient2@mycompany.com \
+  --sender you@example.com \
+  --receiver recipient@example.com \
   --subject "Quarterly Update" \
   --draft "Here's a draft for the quarterly update email."
 ```
 
-**Note:**
-
-- The sender and all receivers must use `@mycompany.com` emails.
-- You must set your `OPENAI_API_KEY` in the environment before running.
+**Note:** You must set your `OPENAI_API_KEY` in the environment before running.
 
 ## Workflow Overview
 
 - **prepare_email**:
-  Initializes the email client and uses an LLM to generate a fully-formed email from your draft and subject.
-  Emits a `PrepareEmail` event for each receiver.
+  Uses an LLM to generate a fully-formed email from your draft and subject.
 
 - **send_email**:
-  Sends the generated email to each receiver using the internal email client.
-  Updates email statistics.
-
-- **collect_email_stats**:
-  Collects results from all send attempts and outputs a summary of successes and failures.
+  Sends the generated email to the single receiver and finishes the workflow.
 
 ## Customization
 

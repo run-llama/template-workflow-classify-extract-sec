@@ -36,7 +36,7 @@ def compare_with_expected_materialized(
 
             template_name = template_dir.name
             root = Path.cwd()
-            test_proj_dir = root / "tests" / template_name
+            test_proj_dir = root / "rendered" / template_name
             differences = compare_directories(expected_proj, test_proj_dir)
 
             if not differences:
