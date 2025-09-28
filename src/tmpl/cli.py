@@ -32,7 +32,7 @@ from .templates import (
     regenerate_test_proj,
 )
 from .sync import compare_with_expected_materialized
-from .checks import run_javascript_checks, run_python_checks
+from .checks import run_javascript_checks, run_python_checks, validate_workflows
 from .init.scripts import init_python_scripts, init_package_json_scripts
 from .utils import console, run_git_command
 from .metrics.exporter import send_posthog_event, GitHubAuth, get_all_events_for_export
@@ -374,6 +374,15 @@ def export_metrics_cmd(dry_run: bool, print_json: bool, backfill: bool) -> None:
                 event.properties,
                 timestamp=event.timestamp,
             )
+
+
+@cli.command("check-workflows")
+@click.argument("template_name", type=click.Choice(MAPPING_DATA.keys()))
+def check_workflows_cmd(template_name: str) -> None:
+    """Validate workflows for a single template's rendered project."""
+    template_dir = get_template_dir(template_name)
+    test_proj_dir = ensure_test_proj_exists(template_dir)
+    validate_workflows(test_proj_dir)
 
 
 @cli.command(

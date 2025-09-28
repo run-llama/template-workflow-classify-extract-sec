@@ -4,10 +4,11 @@ on:
   pull_request: {}
   push:
     branches: [ main ]
+  workflow_dispatch: {}
 
 jobs:
 
-  root-lint:
+  root-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,11 +17,29 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      - name: Root lint
+      - name: Root lint and test
         run: |
           uv run hatch run lint-check
           uv run hatch run format-check
           uv run hatch run typecheck
+          uv run hatch run test
+
+  enumerate:
+    runs-on: ubuntu-latest
+    outputs:
+      all_json: ${{ steps.list.outputs.all_json }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - id: list
+        name: List all templates
+        run: |
+          echo -n 'all_json=' >> "$GITHUB_OUTPUT"
+          uv run python -c 'import json; from tmpl.config import MAPPING_DATA; print(json.dumps(list(MAPPING_DATA.keys())))' >> "$GITHUB_OUTPUT"
 
   detect:
     runs-on: ubuntu-latest
@@ -40,13 +59,13 @@ jobs:
           uv run tmpl changed --format json --github-output
 
   validate:
-    needs: detect
-    if: needs.detect.outputs.has_changes == 'true'
+    needs: [detect, enumerate]
+    if: needs.detect.outputs.has_changes == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        template: ${{ fromJSON(needs.detect.outputs.changed_json) }}
+        template: ${{ fromJSON(github.event_name == 'workflow_dispatch' && needs.enumerate.outputs.all_json || needs.detect.outputs.changed_json) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,14 +82,9 @@ jobs:
         env:
           TEMPLATE: ${{ matrix.template }}
         run: |
+          uv run tmpl check-workflows "$TEMPLATE"
           uv run tmpl check-python "$TEMPLATE"
           uv run tmpl check-javascript "$TEMPLATE"
           uv run tmpl check-template "$TEMPLATE"
           uv run tmpl check-regeneration "$TEMPLATE"
 
-  no_changes:
-    needs: detect
-    if: needs.detect.outputs.has_changes != 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "No template changes detected. Skipping validation."
