@@ -60,6 +60,11 @@ jobs:
             uv run tmpl mirror "$t"
           done
 
+      - name: Ensure remote tags exist for all versions (after auto mirror)
+        if: github.event_name == 'push' && steps.changes.outputs.has_changes == 'true'
+        run: |
+          uv run tmpl tag-versions
+
       - name: Mirror template (manual)
         if: github.event_name == 'workflow_dispatch'
         env:
@@ -69,6 +74,11 @@ jobs:
             echo "Force mirroring $t"
             uv run tmpl mirror "$t"
           done
+
+      - name: Ensure remote tags exist for all versions (after manual mirror)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          uv run tmpl tag-versions
 
       - name: No changes to mirror
         if: github.event_name == 'push' && steps.changes.outputs.has_changes != 'true'

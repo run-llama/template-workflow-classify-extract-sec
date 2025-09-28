@@ -10,6 +10,14 @@ from typing import Optional
 import click
 
 from .config import MAPPING_DATA
+from .config import load_mapping
+from .config import MAPPING_FILE
+from .git.versioning import (
+    detect_changed_templates,
+    apply_version_bumps,
+    save_mapping_versions,
+)
+from .git.tagging import run_tag_versions
 from .git import (
     clone_templates,
     detect_base_ref,
@@ -28,6 +36,8 @@ from .checks import run_javascript_checks, run_python_checks
 from .init.scripts import init_python_scripts, init_package_json_scripts
 from .utils import console, run_git_command
 from .metrics.exporter import send_posthog_event, GitHubAuth, get_all_events_for_export
+from pathlib import Path
+from packaging.version import Version
 
 
 @click.group()
@@ -48,6 +58,82 @@ def list_cmd(detail: bool) -> None:
             print(f"  remote: {cfg.get('remote')}")
             print(f"  url: {cfg.get('url')}")
             print(f"  branch: {cfg.get('branch')}")
+            if cfg.get("version"):
+                print(f"  version: {cfg.get('version')}")
+
+
+@cli.command("version")
+@click.option("--base", "base_ref", default=None, help="Base ref/sha to diff against")
+@click.option("--head", "head_ref", default="HEAD", help="Head ref/sha to diff from")
+def version_cmd(base_ref: Optional[str], head_ref: str) -> None:
+    """
+    Bump versions for templates that have changed.
+
+    Detects changed templates (like 'changed'), then interactively prompts for each
+    whether the change is major, minor, patch, or ignore. Updates the version
+    in .github/templates-remotes.yml accordingly (defaulting to 0.0.0 when missing).
+    """
+    changed = detect_changed_templates(
+        head_ref=head_ref,
+        base_ref=base_ref,
+        detect_base_ref_func=detect_base_ref,
+        list_changed_files_func=list_changed_files,
+        templates_from_files_func=templates_from_files,
+        mapping_keys=list(MAPPING_DATA.keys()),
+    )
+
+    if not changed:
+        console.print("No template changes detected.", style="yellow")
+        return
+
+    mapping = load_mapping(Path(MAPPING_FILE))
+
+    def parse_version(v: Optional[str]) -> Version:
+        try:
+            return Version(v) if v else Version("0.0.0")
+        except Exception:
+            return Version("0.0.0")
+
+    decisions: dict[str, str] = {}
+    for name in changed:
+        choice = click.prompt(
+            f"Version change for {name}",
+            type=click.Choice(
+                ["major", "minor", "patch", "ignore"], case_sensitive=False
+            ),
+            default="ignore",
+            show_choices=True,
+        )
+        decisions[name] = choice.lower()
+
+    new_mapping = apply_version_bumps(mapping, decisions)
+
+    if mapping == new_mapping:
+        console.print("No versions changed.", style="yellow")
+        return
+
+    save_mapping_versions(new_mapping, Path(MAPPING_FILE))
+    console.print("Updated versions:", style="green")
+    for name, action in decisions.items():
+        if action != "ignore" and name in new_mapping:
+            console.print(f"  - {name} -> {new_mapping[name].get('version')}")
+
+
+@cli.command("tag-versions")
+def tag_versions_cmd() -> None:
+    """
+    Ensure remote tags exist for all templates with a configured version.
+
+    For each template with a `version` in the mapping, checks the remote for tag
+    `vX.Y.Z`. If missing, computes the subtree split commit for the template and pushes
+    the tag pointing to that commit to the remote.
+    """
+    tagged = run_tag_versions(Path(MAPPING_FILE))
+    if tagged:
+        console.print("Created/updated tags:", style="green")
+        for t in tagged:
+            name, tag = t.split(":", 1)
+            console.print(f"  - {name} -> {tag}")
 
 
 @cli.command("changed")

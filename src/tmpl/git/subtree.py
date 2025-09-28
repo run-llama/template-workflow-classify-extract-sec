@@ -21,6 +21,7 @@ def mirror_template(template_name: str, config: TemplatesMapping) -> None:
     # Ensure the git remote exists and is pointed at the correct URL
     ensure_remote(remote, url)
     prefix = f"templates/{template_name}"
+    # Push subtree to remote branch
     cmd = ["git", "subtree", "push", "--prefix", prefix, remote, branch]
     run(cmd)
 
