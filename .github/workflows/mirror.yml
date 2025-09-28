@@ -42,6 +42,10 @@ jobs:
           SHA: ${{ github.sha }}
         run: |
           uv run tmpl changed --base "$BEFORE" --head "$SHA" --format json --github-output
+          # Also consider changes to the templates remotes mapping as a signal of changes
+          if git diff --name-only "$BEFORE" "$SHA" -- .github/templates-remotes.yml | grep -q .; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set manual template for workflow_dispatch
         if: github.event_name == 'workflow_dispatch'
