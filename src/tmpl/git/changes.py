@@ -29,10 +29,30 @@ def detect_base_ref(head: str) -> str:
     return git_output(["rev-parse", f"{head}~1"])  # returns stdout as str
 
 
-def list_changed_files(base: str, head: str) -> List[str]:
-    """List files changed between two git references."""
-    out = git_output(["diff", "--name-only", f"{base}...{head}"])
-    return [line for line in out.splitlines() if line]
+def list_changed_files(
+    base: str, head: str, include_uncommitted: bool = True
+) -> List[str]:
+    """List files changed between two git references.
+
+    When include_uncommitted is True (default), also include staged and unstaged
+    working tree changes relative to HEAD.
+    """
+    committed_out = git_output(["diff", "--name-only", f"{base}...{head}"])
+    changed: Set[str] = {line for line in committed_out.splitlines() if line}
+
+    if include_uncommitted:
+        # Staged changes
+        staged_out = git_output(["diff", "--name-only", "--cached"])
+        for line in staged_out.splitlines():
+            if line:
+                changed.add(line)
+        # Unstaged changes
+        unstaged_out = git_output(["diff", "--name-only"])
+        for line in unstaged_out.splitlines():
+            if line:
+                changed.add(line)
+
+    return sorted(changed)
 
 
 def templates_from_files(files: Iterable[str], template_names: list[str]) -> List[str]:

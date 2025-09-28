@@ -65,7 +65,12 @@ def list_cmd(detail: bool) -> None:
 @cli.command("version")
 @click.option("--base", "base_ref", default=None, help="Base ref/sha to diff against")
 @click.option("--head", "head_ref", default="HEAD", help="Head ref/sha to diff from")
-def version_cmd(base_ref: Optional[str], head_ref: str) -> None:
+@click.option(
+    "--committed-only/--include-uncommitted",
+    default=False,
+    help="Only consider committed changes (default includes uncommitted)",
+)
+def version_cmd(base_ref: Optional[str], head_ref: str, committed_only: bool) -> None:
     """
     Bump versions for templates that have changed.
 
@@ -76,6 +81,7 @@ def version_cmd(base_ref: Optional[str], head_ref: str) -> None:
     changed = detect_changed_templates(
         head_ref=head_ref,
         base_ref=base_ref,
+        include_uncommitted=not committed_only,
         detect_base_ref_func=detect_base_ref,
         list_changed_files_func=list_changed_files,
         templates_from_files_func=templates_from_files,
@@ -141,8 +147,17 @@ def tag_versions_cmd() -> None:
 @click.option("--head", "head_ref", default="HEAD", help="Head ref/sha to diff from")
 @click.option("--format", "fmt", type=click.Choice(["json", "lines"]), default="json")
 @click.option("--github-output", is_flag=True, help="Write GitHub Actions outputs")
+@click.option(
+    "--committed-only/--include-uncommitted",
+    default=False,
+    help="Only consider committed changes (default includes uncommitted)",
+)
 def changed_cmd(
-    base_ref: Optional[str], head_ref: str, fmt: str, github_output: bool
+    base_ref: Optional[str],
+    head_ref: str,
+    fmt: str,
+    github_output: bool,
+    committed_only: bool,
 ) -> None:
     """
     Show which templates changed between two git refs.
@@ -154,7 +169,7 @@ def changed_cmd(
     """
     head = head_ref
     base = base_ref or detect_base_ref(head)
-    files = list_changed_files(base, head)
+    files = list_changed_files(base, head, include_uncommitted=not committed_only)
     changed = templates_from_files(files, list(MAPPING_DATA.keys()))
     if fmt == "json":
         print(json.dumps(changed))

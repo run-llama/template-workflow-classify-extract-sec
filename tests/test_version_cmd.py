@@ -47,7 +47,7 @@ templates:
     monkeypatch.setattr(
         cli_mod,
         "list_changed_files",
-        lambda base, head: ["templates/basic/pyproject.toml"],
+        lambda base, head, include_uncommitted=True: ["templates/basic/pyproject.toml"],
     )
     monkeypatch.setattr(cli_mod, "templates_from_files", lambda files, names: ["basic"])
 
@@ -90,7 +90,10 @@ templates:
     monkeypatch.setattr(
         cli_mod,
         "list_changed_files",
-        lambda base, head: ["templates/t1/x", "templates/t2/y"],
+        lambda base, head, include_uncommitted=True: [
+            "templates/t1/x",
+            "templates/t2/y",
+        ],
     )
     # Ensure deterministic order: sorted -> [t1, t2]
     monkeypatch.setattr(

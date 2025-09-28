@@ -12,6 +12,7 @@ def detect_changed_templates(
     *,
     head_ref: str,
     base_ref: Optional[str],
+    include_uncommitted: bool = True,
     detect_base_ref_func,
     list_changed_files_func,
     templates_from_files_func,
@@ -19,7 +20,7 @@ def detect_changed_templates(
 ) -> List[str]:
     head = head_ref
     base = base_ref or detect_base_ref_func(head)
-    files = list_changed_files_func(base, head)
+    files = list_changed_files_func(base, head, include_uncommitted=include_uncommitted)
     return templates_from_files_func(files, mapping_keys)
 
 
