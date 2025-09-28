@@ -126,7 +126,8 @@ def version_cmd(base_ref: Optional[str], head_ref: str, committed_only: bool) ->
 
 
 @cli.command("tag-versions")
-def tag_versions_cmd() -> None:
+@click.option("--dry-run", is_flag=True, help="Print actions without fetching/pushing")
+def tag_versions_cmd(dry_run: bool) -> None:
     """
     Ensure remote tags exist for all templates with a configured version.
 
@@ -134,7 +135,7 @@ def tag_versions_cmd() -> None:
     `vX.Y.Z`. If missing, computes the subtree split commit for the template and pushes
     the tag pointing to that commit to the remote.
     """
-    tagged = run_tag_versions(Path(MAPPING_FILE))
+    tagged = run_tag_versions(Path(MAPPING_FILE), dry_run=dry_run)
     if tagged:
         console.print("Created/updated tags:", style="green")
         for t in tagged:

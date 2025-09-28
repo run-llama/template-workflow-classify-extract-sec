@@ -1,24 +1,11 @@
 name: templates-ci
 
 on:
-  pull_request:
-    paths:
-      - 'templates/**'
-      - 'harness/**'
-      - 'scripts/**'
-      - '.github/workflows/**'
-      - '.github/templates-remotes.yml'
+  pull_request: {}
   push:
     branches: [ main ]
-    paths:
-      - 'templates/**'
-      - 'harness/**'
-      - 'scripts/**'
-      - '.github/workflows/**'
-      - '.github/templates-remotes.yml'
 
 jobs:
-
 
   root-lint:
     runs-on: ubuntu-latest

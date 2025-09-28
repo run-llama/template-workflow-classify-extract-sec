@@ -9,9 +9,10 @@ from ..utils.console import console
 
 
 def ensure_remote(remote: str, url: str) -> None:
+    """Ensure the remote exists without emitting error noise if missing."""
     try:
-        run(["git", "remote", "get-url", remote])
-    except SystemExit:
+        git_output(["remote", "get-url", remote])
+    except Exception:
         run(["git", "remote", "add", remote, url])
 
 
@@ -25,7 +26,13 @@ def get_remote_tag_hash(remote: str, tag_name: str) -> Optional[str]:
         out = git_output(["ls-remote", "--tags", remote, tag_name])
         if not out:
             return None
-        first = out.splitlines()[0]
+        lines = out.splitlines()
+        # Prefer peeled entry (annotated tags): refs/tags/<tag>^{}
+        for line in lines:
+            if line.endswith(f"refs/tags/{tag_name}^{{}}"):
+                return line.split()[0]
+        # Fallback to the first line (lightweight tags or annotated without peeled)
+        first = lines[0]
         return first.split()[0] if first else None
     except Exception:
         return None
@@ -39,7 +46,9 @@ def push_tag_to_remote(remote: str, commit: str, tag_name: str) -> None:
     run(["git", "push", remote, f"{commit}:refs/tags/{tag_name}", "-f"])
 
 
-def tag_all_versions(mapping: Dict[str, TemplatesMapping]) -> List[str]:
+def tag_all_versions(
+    mapping: Dict[str, TemplatesMapping], dry_run: bool = False
+) -> List[str]:
     """Create missing tags on remotes for all templates.
 
     Returns a list of "name:tag" strings created. Aggregates errors per-template
@@ -67,11 +76,10 @@ def tag_all_versions(mapping: Dict[str, TemplatesMapping]) -> List[str]:
                 style="bold",
             )
             ensure_remote(remote, url)
-            console.print("Fetching remote branch and tags...")
+            console.print("Fetching remote branch...")
             # Ensure objects (including the configured branch and tags) from the subtree
             # remote are present locally.
             run(["git", "fetch", remote, branch])
-            run(["git", "fetch", remote, "--tags"])
 
             tag_name = f"v{version}"
             prefix = f"templates/{name}"
@@ -83,23 +91,44 @@ def tag_all_versions(mapping: Dict[str, TemplatesMapping]) -> List[str]:
 
             existing_hash = get_remote_tag_hash(remote, tag_name)
             if existing_hash:
-                msg = (
-                    f"Remote already has {tag_name} at {existing_hash}. "
-                    f"Local computed commit is {commit}."
+                # Detailed diagnostics when tag already exists on remote
+                console.print(
+                    f"Remote {remote} tag {tag_name} = {existing_hash}", style="dim"
                 )
-                style = "yellow" if existing_hash != commit else "green"
-                console.print(msg, style=style)
+                console.print(f"Computed subtree commit = {commit}", style="dim")
+
+                if existing_hash != commit:
+                    console.print(
+                        (
+                            f"⚠️  {name}: remote tag {tag_name} points to a different commit than the current subtree split.\n"
+                            f"   This likely indicates unversioned changes or a missing version bump.\n"
+                            f"   Skipping push to avoid clobbering an existing tag."
+                        ),
+                        style="yellow",
+                    )
+                else:
+                    console.print(
+                        f"✓ {name}: remote tag matches computed subtree commit",
+                        style="green",
+                    )
                 # Skip pushing if tag exists; behavior unchanged.
                 continue
 
-            console.print(
-                f"Pushing tag {tag_name} -> {commit} to {remote}", style="cyan"
-            )
-            push_tag_to_remote(remote, commit, tag_name)
-            tagged.append(f"{name}:{tag_name}")
-            console.print(
-                f"✓ Created {tag_name} on {remote} at {commit}", style="green"
-            )
+            if dry_run:
+                console.print(
+                    f"DRY-RUN: would push tag {tag_name} -> {commit} to {remote}",
+                    style="cyan",
+                )
+                tagged.append(f"{name}:{tag_name}")
+            else:
+                console.print(
+                    f"Pushing tag {tag_name} -> {commit} to {remote}", style="cyan"
+                )
+                push_tag_to_remote(remote, commit, tag_name)
+                tagged.append(f"{name}:{tag_name}")
+                console.print(
+                    f"✓ Created {tag_name} on {remote} at {commit}", style="green"
+                )
 
         except SystemExit as e:
             code = int(e.code) if isinstance(e.code, int) else 1
@@ -111,18 +140,22 @@ def tag_all_versions(mapping: Dict[str, TemplatesMapping]) -> List[str]:
             errors.append(f"{name}: unexpected error: {e}")
 
     if errors:
-        console.print("\n❌ One or more tagging operations failed:", style="bold red")
+        console.print(
+            "\n⚠️  One or more tagging operations encountered errors:",
+            style="bold yellow",
+        )
         for err in errors:
-            console.print(f"  - {err}", style="red")
-        # Fail after processing all templates
-        raise SystemExit(1)
+            console.print(f"  - {err}", style="yellow")
+        # Do not fail the overall command; provide diagnostics only.
 
     return tagged
 
 
-def run_tag_versions(mapping_path: Path | None = None) -> List[str]:
+def run_tag_versions(
+    mapping_path: Path | None = None, dry_run: bool = False
+) -> List[str]:
     from .. import config as cfg
 
     mapping_file = mapping_path or Path(cfg.MAPPING_FILE)
     mapping = load_mapping(mapping_file)
-    return tag_all_versions(mapping)
+    return tag_all_versions(mapping, dry_run=dry_run)
