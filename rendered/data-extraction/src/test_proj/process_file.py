@@ -155,7 +155,7 @@ class ProcessFileWorkflow(Workflow):
             )
             # remove past data when reprocessing the same file
             if event.data.file_hash:
-                existing_data = await get_data_client().search(
+                existing_data = await get_data_client().untyped_search(
                     filter={
                         "file_hash": {
                             "eq": event.data.file_hash,

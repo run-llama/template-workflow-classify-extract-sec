@@ -43,6 +43,11 @@ def tag_all_versions(mapping: Dict[str, TemplatesMapping]) -> List[str]:
             continue
 
         ensure_remote(remote, url)
+        # Ensure objects (including the configured branch and tags) from the subtree
+        # remote are present locally. This avoids failures where `git subtree split`
+        # references a prior split hash and needs objects from the subtree repo.
+        run(["git", "fetch", remote, branch])
+        run(["git", "fetch", remote, "--tags"])
         tag_name = f"v{version}"
         if remote_has_tag(remote, tag_name):
             continue

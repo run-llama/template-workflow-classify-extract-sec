@@ -14,7 +14,15 @@ on:
         required: true
         type: choice
         options:
+          - data-extraction
+          - document-qa
+          - basic-ui
           - basic
+          - document-parsing
+          - human-in-the-loop
+          - invoice-extraction
+          - rag
+          - web-scraping 
 
 jobs:
   mirror:
