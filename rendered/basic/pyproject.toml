@@ -33,7 +33,7 @@ all-check = ["format-check", "lint-check", "test"]
 all-fix = ["format", "lint", "test"]
 
 [tool.llamadeploy]
-env-files = [".env"]
+env_files = [".env"]
 
 [tool.llamadeploy.workflows]
 default = "basic.workflow:workflow"

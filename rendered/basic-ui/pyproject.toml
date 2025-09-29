@@ -37,7 +37,7 @@ test = "pytest"
  directory = "./ui"
  
  [tool.llamadeploy]
- env-files = [".env"]
+ env_files = [".env"]
  
  [tool.llamadeploy.workflows]
  default = "app.workflow:workflow"
