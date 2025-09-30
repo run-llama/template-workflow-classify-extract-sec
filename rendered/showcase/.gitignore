@@ -1,0 +1,7 @@
+.venv
+__pycache__
+workflows.db
+
+.env
+package-lock.json
+node_modules
