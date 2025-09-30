@@ -3,7 +3,8 @@ import { useWorkflowHandlerList, WorkflowTrigger } from "@llamaindex/ui";
 import { APP_TITLE, INDEX_NAME } from "../libs/config";
 import { useChatHistory } from "@/libs/useChatHistory";
 import Sidebar from "@/components/Sidebar";
-import { Loader } from "lucide-react";
+import { useRef, useEffect } from "react";
+import { toast } from "sonner";
 
 export default function Home() {
   const chatHistory = useChatHistory();
@@ -12,6 +13,12 @@ export default function Home() {
     (h) => h.status === "running" && h.workflowName === "upload",
   );
   const anyActiveHandlers = activeHandlers.length > 0;
+  const lastCount = useRef(activeHandlers.length);
+  useEffect(() => {
+    if (activeHandlers.length < lastCount.current) {
+      toast.success("Upload completed");
+    }
+  }, [activeHandlers.length]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,10 +44,8 @@ export default function Home() {
                     index_name: INDEX_NAME,
                   };
                 }}
+                isProcessing={anyActiveHandlers}
               />
-              {anyActiveHandlers && (
-                <Loader className="w-4 h-4 animate-spin text-muted-foreground" />
-              )}
             </div>
           </header>
 

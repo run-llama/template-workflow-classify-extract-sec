@@ -1,5 +1,7 @@
 import { IDBPDatabase, openDB } from "idb";
 import { useEffect, useState } from "react";
+import { getResultsByHandlerId } from "@llamaindex/workflows-client";
+import { useWorkflowsClient } from "@llamaindex/ui";
 
 export interface ChatHistory {
   handlerId: string;
@@ -35,6 +37,7 @@ export function useChatHistory(): UseChatHistory {
   >(null);
   const [db, setDb] = useState<IDBPDatabase<unknown> | null>(null);
   const [chatCounter, setChatCounter] = useState(0);
+  const workflowsClient = useWorkflowsClient();
 
   // Initialize database
   useEffect(() => {
@@ -74,11 +77,29 @@ export function useChatHistory(): UseChatHistory {
       try {
         setLoading(true);
         const chats = await getChatsFromDb();
-        setChatHistory(chats);
+        // validate the local state against the remote state
+        const validatedChats = await Promise.all(
+          chats.map(async (chat) => {
+            const result = await getResultsByHandlerId({
+              client: workflowsClient,
+              path: {
+                handler_id: chat.handlerId,
+              },
+            });
+            if (result.response.status === 404) {
+              await deleteChat(chat.handlerId);
+              return;
+            } else {
+              return chat;
+            }
+          }),
+        );
+        const validChats = validatedChats.filter((c) => c !== undefined);
+        setChatHistory(validChats);
 
         // Initialize selectedChat to the latest chat (first in sorted array)
-        if (chats.length > 0 && !selectedChatHandlerId) {
-          setSelectedChatHandlerId(chats[0].handlerId);
+        if (validChats.length > 0 && !selectedChatHandlerId) {
+          setSelectedChatHandlerId(validChats[0].handlerId);
         }
       } catch (error) {
         console.error("Failed to load chat history:", error);

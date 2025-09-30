@@ -1,6 +1,6 @@
 # Llama Deploy
 
-This application uses LlamaDeploy. For more information see [the docs](https://developers.llamaindex.ai/python/cloud/llamadeploy/getting-started)
+This application uses LlamaDeploy. For more information see [the docs](https://developers.llamaindex.ai/python/cloud/llamaagents/getting-started)
 
 # Getting Started
 
@@ -11,5 +11,5 @@ This application uses LlamaDeploy. For more information see [the docs](https://d
 
 # Organization
 
-- `src` contains python workflow sources. The name of the deployment here is defined as `research`
-- `ui` contains a vite app powered by llama-ui. It calls the local workflow server via api requests. See http://localhost:4501/docs for openAPI docs
+- `src` contains python workflow sources. The name of the deployment here is defined as `app`
+- `ui` contains a vite app powered by `@llamaindex/ui`. It calls the local workflow server via api requests. See http://localhost:4501/deployments/app/docs for openAPI docs
