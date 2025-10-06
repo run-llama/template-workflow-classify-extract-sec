@@ -5,13 +5,11 @@ build-backend = "hatchling.build"
 [project]
 name = "basic"
 version = "0.1.0"
-description = "A base example that showcases usage patterns for workflows"
+description = "Minimal starter workflow project"
 requires-python = ">=3.10"
 readme = "README.md"
 dependencies = [
     "llama-index-workflows>=2.5.0,<3.0.0",
-    "llama-cloud-services>=0.6.69",
-    "llama-index-llms-openai>=0.6.1,<0.7.0",
 ]
 
 [dependency-groups]
