@@ -56,6 +56,15 @@ def get_llama_parse_client() -> LlamaParse:
 
 @functools.lru_cache(maxsize=None)
 def get_index(index_name: str) -> LlamaCloudIndex:
+    """
+    Retrieve an existing LlamaCloudIndex or create a new one if it doesn't exist.
+
+    Args:
+        index_name: The name of the index to retrieve or create.
+
+    Returns:
+        LlamaCloudIndex: The retrieved or newly created index instance.
+    """
     return LlamaCloudIndex.create_index(
         name=index_name,
         project_id=LLAMA_CLOUD_PROJECT_ID,

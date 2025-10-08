@@ -58,7 +58,10 @@ def list_changed_files(
 def templates_from_files(files: Iterable[str], template_names: list[str]) -> List[str]:
     """Extract template names from a list of file paths."""
     templates: Set[str] = set()
-    start_paths = ["templates/" + name for name in template_names]
+    start_paths = []
+    for name in template_names:
+        start_paths.append("templates/" + name)
+        start_paths.append("rendered/" + name)
     for path in files:
         if path.startswith(tuple(start_paths)):
             parts = path.split("/")
