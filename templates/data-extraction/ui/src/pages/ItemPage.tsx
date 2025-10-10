@@ -5,8 +5,9 @@ import {
   FilePreview,
   useItemData,
   type Highlight,
+  Button,
 } from "@llamaindex/ui";
-import { Clock, XCircle } from "lucide-react";
+import { Clock, XCircle, Download } from "lucide-react";
 import { useParams } from "react-router-dom";
 import type { MySchema } from "../schemas/MySchema";
 import MyJsonSchema from "../schemas/MySchema.json" with { type: "json" };
@@ -14,6 +15,7 @@ import { useToolbar } from "@/lib/ToolbarContext";
 import { useNavigate } from "react-router-dom";
 import { modifyJsonSchema } from "@llamaindex/ui/lib";
 import { APP_TITLE } from "@/lib/config";
+import { downloadExtractedDataItem } from "@/lib/export";
 
 export default function ItemPage() {
   const { itemId } = useParams<{ itemId: string }>();
@@ -51,7 +53,20 @@ export default function ItemPage() {
 
   useEffect(() => {
     setButtons(() => [
-      <div className="ml-auto flex items-center">
+      <div className="ml-auto flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            if (itemData) {
+              downloadExtractedDataItem(itemData);
+            }
+          }}
+          disabled={!itemData}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export JSON
+        </Button>
         <AcceptReject<MySchema>
           itemData={itemHookData}
           onComplete={() => navigate("/")}
