@@ -9,7 +9,7 @@ from typing import cast
 
 import tomlkit
 
-from tmpl.templates.manager import get_rendered_dir
+from tmpl.templates.manager import get_template_dir
 
 from ..utils import console
 
@@ -21,11 +21,11 @@ def init_python_scripts(template_name: str) -> None:
     1. Adds development dependencies (ty, pytest, ruff, hatch) using uv
     2. Configures hatch commands in pyproject.toml for common development tasks
     """
-    rendered_dir = get_rendered_dir(template_name)
-    pyproject_path = rendered_dir / "pyproject.toml"
+    template_dir = get_template_dir(template_name)
+    pyproject_path = template_dir / "pyproject.toml"
 
     if not pyproject_path.exists():
-        console.print(f"❌ No pyproject.toml found in {rendered_dir}", style="bold red")
+        console.print(f"❌ No pyproject.toml found in {template_dir}", style="bold red")
         raise SystemExit(1)
 
     console.print(f"📦 Adding development dependencies to {template_name}")
@@ -34,7 +34,7 @@ def init_python_scripts(template_name: str) -> None:
     try:
         subprocess.run(
             ["uv", "add", "--dev", "ty", "pytest", "ruff", "hatch"],
-            cwd=rendered_dir,
+            cwd=template_dir,
             check=True,
             capture_output=True,
             text=True,
@@ -75,10 +75,10 @@ def init_python_scripts(template_name: str) -> None:
     console.print("✓ Hatch commands configured", style="green")
 
     # Ensure test folder exists with placeholder test if needed
-    _ensure_test_folder(rendered_dir)
+    _ensure_test_folder(template_dir)
 
     # Ensure gitignore contains required items
-    _ensure_gitignore_items(rendered_dir)
+    _ensure_gitignore_items(template_dir)
 
 
 def get_table(path: list[str], doc: tomlkit.TOMLDocument) -> tomlkit.TOMLDocument:
@@ -107,12 +107,12 @@ def init_package_json_scripts(template_name: str) -> None:
     1. Adds development dependencies (prettier, typescript) using pnpm
     2. Configures npm scripts in package.json for common development tasks
     """
-    rendered_dir = get_rendered_dir(template_name)
-    package_json_path = rendered_dir / "ui" / "package.json"
+    template_dir = get_template_dir(template_name)
+    package_json_path = template_dir / "ui" / "package.json"
 
     if not package_json_path.exists():
         console.print(
-            f"⚠️ No package.json found in {rendered_dir}. Ignoring...", style="yellow"
+            f"⚠️ No package.json found in {template_dir}. Ignoring...", style="yellow"
         )
         return
 
@@ -122,7 +122,7 @@ def init_package_json_scripts(template_name: str) -> None:
     try:
         subprocess.run(
             ["pnpm", "add", "-D", "prettier", "typescript"],
-            cwd=rendered_dir,
+            cwd=template_dir,
             check=True,
             capture_output=True,
             text=True,

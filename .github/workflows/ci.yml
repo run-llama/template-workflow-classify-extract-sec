@@ -85,6 +85,3 @@ jobs:
           uv run tmpl check-workflows "$TEMPLATE"
           uv run tmpl check-python "$TEMPLATE"
           uv run tmpl check-javascript "$TEMPLATE"
-          uv run tmpl check-template "$TEMPLATE"
-          uv run tmpl check-regeneration "$TEMPLATE"
-

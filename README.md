@@ -1,7 +1,7 @@
 Template Manager (tmpl)
 -----------------------
 
-This directory contains the template monorepo manager, exposed via the `tmpl` CLI. It helps you develop, validate, and publish individual templates under `templates/`, using a rendered test project under `rendered/`.
+This directory contains the template monorepo manager, exposed via the `tmpl` CLI. You develop, validate, and publish templates directly under `templates/`
 
 Use `uv` to run commands:
 
@@ -22,16 +22,16 @@ uv run tmpl --help
   - `uv run tmpl merge <template>`
 - **mirror**: Push `templates/<template>` to its upstream remote (git subtree push).
   - `uv run tmpl mirror <template>`
-- **regenerate**: Re-render the test project under `rendered/<template>` using Copier.
-  - `uv run tmpl regenerate <template>`
-- **check-regeneration**: Ensure `rendered/<template>` matches what the template would generate.
-  - `uv run tmpl check-regeneration <template>`
-- **check-python**: Run Python format/lint/type checks within `rendered/<template>`.
+- **check-python**: Run Python format/lint/type checks within `templates/<template>`.
   - `uv run tmpl check-python <template> [--fix]`
-- **check-javascript**: Run JS/TS formatting/lint checks within `rendered/<template>`.
+- **check-javascript**: Run JS/TS formatting/lint checks within `templates/<template>/ui` if present.
   - `uv run tmpl check-javascript <template> [--fix]`
-- **check-template**: Compare `rendered/<template>` with the expected template output; optionally copy changes back to `templates/<template>`.
-  - `uv run tmpl check-template <template> [--fix] [--fix-format]`
+- **check-workflows**: Validate workflows declared in the template's `pyproject.toml`.
+  - `uv run tmpl check-workflows <template>`
+- **version**: Interactively bump versions for changed templates in `.github/templates-remotes.yml`.
+  - `uv run tmpl version [--base <ref> --head <ref>]`
+- **tag-versions**: Ensure remote `vX.Y.Z` tags exist for templates with configured versions.
+  - `uv run tmpl tag-versions [--dry-run]`
 - **init-scripts**: Add helpful dev scripts to the template (Python and JS/TS).
   - `uv run tmpl init-scripts <template>`
 - **export-metrics**: Export GitHub repo traffic to PostHog (see Metrics section).
@@ -41,20 +41,16 @@ uv run tmpl --help
 
 ### Development workflow
 
-The intended loop is to work in the rendered project, validate, sync to the template, and then release:
+Develop directly in the template, validate, and then release:
 
-1. **Render the test project**: create or refresh `rendered/<template>`
-   - `uv run tmpl regenerate <template>`
-2. **Develop in rendered**: make changes inside `rendered/<template>`
+1. **Develop**: make changes inside `templates/<template>`
    - Python: `uv run tmpl check-python <template> --fix`
    - JS/TS (if present): `uv run tmpl check-javascript <template> --fix`
-3. **Sync changes back to the template**: copy diffs from rendered into `templates/<template>`
-   - `uv run tmpl check-template <template> --fix`
-   - Optional: `--fix-format` runs Python and JS formatters before syncing
-4. **Verify regeneration**: ensure a clean re-render produces the same result
-   - `uv run tmpl check-regeneration <template>`
-5. **Commit and open a PR**
-6. **Release**: after merge to `main`, the mirror workflow pushes to the upstream template repo; or run manually:
+   - Workflows: `uv run tmpl check-workflows <template>`
+2. **Bump version** (when needed):
+   - `uv run tmpl version [--base <ref> --head <ref>]`
+3. **Commit and open a PR**
+4. **Release**: after merge to `main`, the mirror workflow pushes to the upstream template repo; or run manually:
    - `uv run tmpl mirror <template>`
 
 Tip: See the root `AGENTS.md` for a quick-start and project-level checks.
@@ -74,7 +70,7 @@ This repo includes workflows that use the CLI under the hood:
   - Triggers on PRs and pushes that touch templates.
   - Steps:
     - Detect changed templates via `uv run tmpl changed --format json --github-output`.
-    - For each changed template: run `check-python`, `check-javascript`, `check-template`, and `check-regeneration`.
+    - For each changed template: run `check-python`, `check-javascript`, and `check-workflows`.
 
 - **mirror-templates** (`.github/workflows/mirror.yml`)
   - Triggers on push to `main` and via manual dispatch.
@@ -104,9 +100,3 @@ The `export-metrics` command fetches 14-day GitHub traffic (clones and unique cl
 - **Examples**:
   - Dry run and print results locally: `uv run tmpl export-metrics --dry-run --print`
   - Backfill daily events for the entire 14-day window: `uv run tmpl export-metrics --backfill`
-
-### Notes
-
-- Remote URLs/branches for templates are configured via `.github/templates-remotes.yml` and loaded by the CLI.
-- The CLI operates on two key locations: `templates/<template>` (source) and `rendered/<template>` (materialized output used for validation and development).
-

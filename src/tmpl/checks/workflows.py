@@ -45,8 +45,8 @@ def _collect_workflows_for_project(project_dir: Path) -> List[Tuple[str, str]]:
     return results
 
 
-def validate_workflows(test_proj_dir: Path) -> None:
-    """Validate all workflows for a single rendered project.
+def validate_workflows(template_dir: Path) -> None:
+    """Validate all workflows for a single project.
 
     - Discovers workflows in the project's pyproject under llamactl/llamadeploy
     - Imports the object and invokes its private _validate() method
@@ -58,9 +58,9 @@ def validate_workflows(test_proj_dir: Path) -> None:
             "uv not available; required to run within project dependencies"
         )
 
-    workflows = _collect_workflows_for_project(test_proj_dir)
+    workflows = _collect_workflows_for_project(template_dir)
     assert workflows is not None, (
-        f"Every project should have at least one workflow. None found for project {test_proj_dir.name}"
+        f"Every project should have at least one workflow. None found for project {template_dir.name}"
     )
 
     failures: List[str] = []
@@ -92,7 +92,7 @@ validate()
         proc = subprocess.run(
             cmd,
             env=env,
-            cwd=str(test_proj_dir),
+            cwd=str(template_dir),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -105,7 +105,7 @@ validate()
                 "\n".join(
                     [
                         "********************************************************************************",
-                        f"Validation failed for {test_proj_dir.name}:{wf_name} -> {import_path}",
+                        f"Validation failed for {template_dir.name}:{wf_name} -> {import_path}",
                         f"Command: {' '.join(map(shlex.quote, cmd))}",
                         "Output:",
                         stdout,

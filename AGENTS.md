@@ -27,16 +27,16 @@ uv run tmpl --help
 Validating CI:
 -------------------
 
-When editing a template. Make changes directly in the tests/<template-name> directory.
+When editing a template. Make changes in the templates/<template-name> directory.
 
-Then, to push changes to a template, run:
+You can validate the template via the `tmpl` CLI:
 
 ```bash
 # format, typecheck, and lint before pushing to template
 uv run tmpl check-python <template-name> --fix
 uv run tmpl check-javascript <template-name> --fix
-# push to the template. Occasionally, complex jinja templates may require manual fixes.
-uv run tmpl check-template <template-name> --fix
+# Validate workflows still validate
+uv run tmpl check-workflows <template-name> 
 ```
 
 When editing the src/tmpl code, make sure it passes it's own checks:

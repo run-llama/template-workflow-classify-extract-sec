@@ -27,17 +27,14 @@ from .git import (
     templates_from_files,
 )
 from .templates import (
-    ensure_test_proj_exists,
     get_template_dir,
-    regenerate_test_proj,
 )
-from .sync import compare_with_expected_materialized
 from .checks import run_javascript_checks, run_python_checks, validate_workflows
 from .init.scripts import init_python_scripts, init_package_json_scripts
-from .utils import console, run_git_command
 from .metrics.exporter import send_posthog_event, GitHubAuth, get_all_events_for_export
 from pathlib import Path
 from packaging.version import Version
+from .utils import console
 
 
 @click.group()
@@ -227,60 +224,13 @@ def clone_cmd(template_name: str) -> None:
     clone_templates({template_name: MAPPING_DATA[template_name]})
 
 
-@cli.command("regenerate")
-@click.argument("template_name", type=click.Choice(MAPPING_DATA.keys()))
-def template_regenerate_cmd(template_name: str) -> None:
-    """Regenerate the test directory for a template."""
-    template_dir = get_template_dir(template_name)
-    console.print(f"Working directory: {template_dir}")
-    console.print("Checking for uncommitted changes...")
-    git_status_check = run_git_command(
-        ["git", "status", "--porcelain"], cwd=template_dir
-    )
-    if git_status_check.stdout.strip():
-        console.print(
-            "Error: Repository has uncommitted changes. Please commit or stash them first.",
-            style="bold red",
-        )
-        console.print(git_status_check.stdout)
-        raise SystemExit(1)
-    regenerate_test_proj(template_dir)
-    console.print("✓ test directory regenerated")
-
-
-@cli.command("check-regeneration")
-@click.argument("template_name", type=click.Choice(MAPPING_DATA.keys()))
-def template_check_regeneration_cmd(template_name: str) -> None:
-    """Check if test directory matches what would be generated from the template."""
-    template_dir = get_template_dir(template_name)
-    console.print(f"Working directory: {template_dir}")
-    regenerate_test_proj(template_dir)
-    console.print("Checking generated files against template...")
-    git_status = run_git_command(["git", "status", "--porcelain"], cwd=template_dir)
-    if git_status.stdout.strip():
-        console.print("\n❌ Generated files do not match template!", style="bold red")
-        console.print("\nFiles that differ:")
-        console.print(git_status.stdout)
-        console.print("\nDifferences:")
-        git_diff = run_git_command(["git", "diff"], cwd=template_dir)
-        console.print(git_diff.stdout)
-        console.print(
-            "\nTo fix: If these changes look good, likely you just need to run regenerate and commit the changes.",
-            style="bold red",
-        )
-        raise SystemExit(1)
-    else:
-        console.print("✓ Generated files match template")
-
-
 @cli.command("check-python")
 @click.argument("template_name", type=click.Choice(MAPPING_DATA.keys()))
 @click.option("--fix", is_flag=True, help="Fix formatting issues automatically.")
 def template_check_python_cmd(template_name: str, fix: bool) -> None:
     """Run Python validation checks on test directory."""
     template_dir = get_template_dir(template_name)
-    test_proj_dir = ensure_test_proj_exists(template_dir)
-    run_python_checks(test_proj_dir, fix)
+    run_python_checks(template_dir, fix)
 
 
 @cli.command("check-javascript")
@@ -289,34 +239,7 @@ def template_check_python_cmd(template_name: str, fix: bool) -> None:
 def template_check_javascript_cmd(template_name: str, fix: bool) -> None:
     """Run JavaScript/TypeScript validation checks on test directory."""
     template_dir = get_template_dir(template_name)
-    test_proj_dir = ensure_test_proj_exists(template_dir)
-    run_javascript_checks(test_proj_dir, fix)
-
-
-@cli.command("check-template")
-@click.argument("template_name", type=click.Choice(MAPPING_DATA.keys()))
-@click.option("--fix", is_flag=True, help="Fix template files by copying back changes.")
-@click.option(
-    "--fix-format",
-    is_flag=True,
-    help="Run Python and JavaScript formatters before fixing template files. Implies --fix.",
-)
-def template_check_template_cmd(
-    template_name: str, fix: bool, fix_format: bool
-) -> None:
-    """Compare test directory with expected template output and optionally fix differences."""
-    template_dir = get_template_dir(template_name)
-    console.print(f"Working directory: {template_dir}")
-    if fix_format:
-        fix = True
-    test_proj_dir = ensure_test_proj_exists(template_dir)
-    if fix_format:
-        run_python_checks(test_proj_dir, fix=True)
-        run_javascript_checks(test_proj_dir, fix=True)
-
-    success = compare_with_expected_materialized(template_dir, fix_mode=fix)
-    if not success:
-        raise SystemExit(1)
+    run_javascript_checks(template_dir, fix)
 
 
 @cli.command("init-scripts")
@@ -379,10 +302,9 @@ def export_metrics_cmd(dry_run: bool, print_json: bool, backfill: bool) -> None:
 @cli.command("check-workflows")
 @click.argument("template_name", type=click.Choice(MAPPING_DATA.keys()))
 def check_workflows_cmd(template_name: str) -> None:
-    """Validate workflows for a single template's rendered project."""
+    """Validate workflows for a single template's project."""
     template_dir = get_template_dir(template_name)
-    test_proj_dir = ensure_test_proj_exists(template_dir)
-    validate_workflows(test_proj_dir)
+    validate_workflows(template_dir)
 
 
 @cli.command(
@@ -403,7 +325,6 @@ def all_cmd(ctx: click.Context, command_name: str, continue_on_error: bool) -> N
 
     Examples:
         tmpl all check-python --fix
-        tmpl all regenerate
         tmpl all mirror --continue-on-error
     """
     # Get any extra arguments passed to the command
