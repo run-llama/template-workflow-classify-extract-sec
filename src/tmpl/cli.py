@@ -417,34 +417,12 @@ def mcp_stdio_cmd() -> None:
     type=click.Choice(["json", "pretty"], case_sensitive=False),
     default="pretty",
 )
-def search_templates_cmd(query: str, limit: int, context: int, fmt: str) -> None:
+def search_templates_cmd(query: str, limit: int, context: int) -> None:
     """Search the templates directory for files relevant to QUERY.
 
     This runs the local search directly without starting the MCP server.
     """
     results = search_templates_impl(query, limit=limit, context_lines=max(0, context))
-    if fmt == "json":
-        payload = {
-            "query": query,
-            "results": [
-                {
-                    "path": r.path,
-                    "score": r.score,
-                    "matches": [
-                        {
-                            "line": m.line,
-                            "text": m.text,
-                            "before": m.before,
-                            "after": m.after,
-                        }
-                        for m in r.matches
-                    ],
-                }
-                for r in results
-            ],
-        }
-        print(json.dumps(payload))
-        return
 
     # pretty format
     if not results:
