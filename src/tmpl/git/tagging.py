@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Dict, List, Optional
 
-from ..config import load_mapping, TemplatesMapping
+from ..config import TemplatesMapping, get_mapping_data
 from ..utils import git_output, run
 from ..utils.console import console
 
@@ -151,11 +150,6 @@ def tag_all_versions(
     return tagged
 
 
-def run_tag_versions(
-    mapping_path: Path | None = None, dry_run: bool = False
-) -> List[str]:
-    from .. import config as cfg
-
-    mapping_file = mapping_path or Path(cfg.MAPPING_FILE)
-    mapping = load_mapping(mapping_file)
+def run_tag_versions(dry_run: bool = False) -> List[str]:
+    mapping = get_mapping_data()
     return tag_all_versions(mapping, dry_run=dry_run)

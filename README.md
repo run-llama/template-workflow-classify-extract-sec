@@ -100,3 +100,16 @@ The `export-metrics` command fetches 14-day GitHub traffic (clones and unique cl
 - **Examples**:
   - Dry run and print results locally: `uv run tmpl export-metrics --dry-run --print`
   - Backfill daily events for the entire 14-day window: `uv run tmpl export-metrics --backfill`
+
+### MCP Server
+
+There's an experimental template search MCP server that can be used to search the templates directory for files relevant to a query.
+
+It is autoconfigured for cursor in `.cursor/mcp.json`.
+
+```json
+    "tmpl": {
+      "command": "uv",
+      "args": ["run", "tmpl", "mcp-stdio"]
+    }
+```

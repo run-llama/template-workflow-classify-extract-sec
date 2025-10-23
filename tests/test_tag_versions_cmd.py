@@ -7,6 +7,7 @@ from click.testing import CliRunner
 
 from tmpl.cli import cli as tmpl_cli
 import tmpl.cli as cli_mod
+import tmpl.config.mapping as mapping_mod
 from tmpl.git.tagging import tag_all_versions
 
 
@@ -41,7 +42,12 @@ templates:
 """.lstrip(),
     )
 
-    monkeypatch.setattr(cli_mod, "MAPPING_FILE", str(mapping_file))
+    monkeypatch.setattr(
+        mapping_mod,
+        "discover_repo_mapping_path",
+        lambda: mapping_file,
+    )
+    mapping_mod.get_mapping_data.cache_clear()
     monkeypatch.setattr(cli_mod, "MAPPING_DATA", {"basic": {}})
 
     # Simulate remote not having the tag and subtree split commit id

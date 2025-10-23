@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import sys
@@ -10,8 +11,7 @@ from typing import Optional
 import click
 
 from .config import MAPPING_DATA
-from .config import load_mapping
-from .config import MAPPING_FILE
+from .config import get_mapping_data, get_mapping_write_path
 from .git.versioning import (
     detect_changed_templates,
     apply_version_bumps,
@@ -32,9 +32,13 @@ from .templates import (
 from .checks import run_javascript_checks, run_python_checks, validate_workflows
 from .init.scripts import init_python_scripts, init_package_json_scripts
 from .metrics.exporter import send_posthog_event, GitHubAuth, get_all_events_for_export
-from pathlib import Path
 from packaging.version import Version
 from .utils import console
+from .mcp.mcp import (
+    run_stdio as mcp_run_stdio,
+    search_templates_impl,
+    format_results_pretty,
+)
 
 
 @click.group()
@@ -89,7 +93,7 @@ def version_cmd(base_ref: Optional[str], head_ref: str, committed_only: bool) ->
         console.print("No template changes detected.", style="yellow")
         return
 
-    mapping = load_mapping(Path(MAPPING_FILE))
+    mapping = get_mapping_data()
 
     def parse_version(v: Optional[str]) -> Version:
         try:
@@ -115,7 +119,7 @@ def version_cmd(base_ref: Optional[str], head_ref: str, committed_only: bool) ->
         console.print("No versions changed.", style="yellow")
         return
 
-    save_mapping_versions(new_mapping, Path(MAPPING_FILE))
+    save_mapping_versions(new_mapping, get_mapping_write_path())
     console.print("Updated versions:", style="green")
     for name, action in decisions.items():
         if action != "ignore" and name in new_mapping:
@@ -132,7 +136,7 @@ def tag_versions_cmd(dry_run: bool) -> None:
     `vX.Y.Z`. If missing, computes the subtree split commit for the template and pushes
     the tag pointing to that commit to the remote.
     """
-    tagged = run_tag_versions(Path(MAPPING_FILE), dry_run=dry_run)
+    tagged = run_tag_versions(dry_run=dry_run)
     if tagged:
         console.print("Created/updated tags:", style="green")
         for t in tagged:
@@ -393,3 +397,61 @@ def all_cmd(ctx: click.Context, command_name: str, continue_on_error: bool) -> N
         sys.exit(1)
     else:
         console.print("🎉 All templates processed successfully!", style="bold green")
+
+
+@cli.command("mcp-stdio")
+def mcp_stdio_cmd() -> None:
+    """Start the MCP server for tmpl tools."""
+    asyncio.run(mcp_run_stdio())
+
+
+@cli.command("search-templates")
+@click.argument("query", type=str)
+@click.option("--limit", "limit", type=int, default=10, help="Max results to return")
+@click.option(
+    "--context", "context", type=int, default=3, help="Lines of context around matches"
+)
+@click.option(
+    "--format",
+    "fmt",
+    type=click.Choice(["json", "pretty"], case_sensitive=False),
+    default="pretty",
+)
+def search_templates_cmd(query: str, limit: int, context: int, fmt: str) -> None:
+    """Search the templates directory for files relevant to QUERY.
+
+    This runs the local search directly without starting the MCP server.
+    """
+    results = search_templates_impl(query, limit=limit, context_lines=max(0, context))
+    if fmt == "json":
+        payload = {
+            "query": query,
+            "results": [
+                {
+                    "path": r.path,
+                    "score": r.score,
+                    "matches": [
+                        {
+                            "line": m.line,
+                            "text": m.text,
+                            "before": m.before,
+                            "after": m.after,
+                        }
+                        for m in r.matches
+                    ],
+                }
+                for r in results
+            ],
+        }
+        print(json.dumps(payload))
+        return
+
+    # pretty format
+    if not results:
+        console.print("No results.", style="yellow")
+        return
+    console.print(f"Query: '{query}' (top {len(results)})", style="bold")
+    # Use shared pretty formatter so CLI and MCP agree
+    pretty = format_results_pretty(results)
+    for line in pretty.splitlines():
+        console.print(line, markup=False)

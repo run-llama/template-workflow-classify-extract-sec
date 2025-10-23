@@ -6,6 +6,7 @@ from click.testing import CliRunner
 
 from tmpl.cli import cli as tmpl_cli
 import tmpl.cli as cli_mod
+import tmpl.config.mapping as mapping_mod
 from tmpl.git.versioning import bump_version_string, apply_version_bumps
 
 
@@ -29,8 +30,13 @@ templates:
 """.lstrip(),
     )
 
-    # Point CLI at our temp mapping file
-    monkeypatch.setattr(cli_mod, "MAPPING_FILE", str(mapping_file))
+    # Point discovery to our temp mapping file and clear memoized cache
+    monkeypatch.setattr(
+        mapping_mod,
+        "discover_repo_mapping_path",
+        lambda: mapping_file,
+    )
+    mapping_mod.get_mapping_data.cache_clear()
     # Provide template list and changed detection
     monkeypatch.setattr(
         cli_mod,
@@ -84,7 +90,12 @@ templates:
 """.lstrip(),
     )
 
-    monkeypatch.setattr(cli_mod, "MAPPING_FILE", str(mapping_file))
+    monkeypatch.setattr(
+        mapping_mod,
+        "discover_repo_mapping_path",
+        lambda: mapping_file,
+    )
+    mapping_mod.get_mapping_data.cache_clear()
     monkeypatch.setattr(cli_mod, "MAPPING_DATA", {"t1": {}, "t2": {}})
     monkeypatch.setattr(cli_mod, "detect_base_ref", lambda head: "BASE")
     monkeypatch.setattr(
