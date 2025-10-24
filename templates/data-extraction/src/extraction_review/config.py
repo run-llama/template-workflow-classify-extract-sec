@@ -22,7 +22,7 @@ agent_name_or_default = agent_name or "extraction-review"
 api_key = os.environ["LLAMA_CLOUD_API_KEY"]
 # get this in case running against a different environment than production
 base_url = os.getenv("LLAMA_CLOUD_BASE_URL")
-extracted_data_collection = "{{ project_name }}"
+extracted_data_collection = "extraction-review"
 project_id = os.getenv("LLAMA_DEPLOY_PROJECT_ID")
 
 
