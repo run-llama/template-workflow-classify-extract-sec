@@ -1,0 +1,6 @@
+{
+  "enabledMcpjsonServers": [
+    "tmpl"
+  ],
+  "enableAllProjectMcpServers": true
+}

@@ -1,2 +1,10 @@
 */uv.lock
 **/pnpm-lock.yaml
+
+# bootstrap agents docs separately
+**/AGENTS.md
+**/CLAUDE.md
+**/.cursor
+**/.mcp.json
+**/.claude
+**/.python-version

@@ -5,7 +5,9 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import shutil
 import sys
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -405,17 +407,94 @@ def mcp_stdio_cmd() -> None:
     asyncio.run(mcp_run_stdio())
 
 
+@cli.command("init-agents-mcp")
+@click.option(
+    "--target",
+    "target_dir",
+    type=click.Path(),
+    default=".",
+    help="Target directory (default: current directory)",
+)
+def init_agents_mcp_cmd(target_dir: str) -> None:
+    """Copy meta-template files for local MCP development to target directory.
+
+    Copies files from meta-templates/agents-mcp/ to the target directory
+    and creates a symlink from CLAUDE.md to AGENTS.md.
+    """
+    # Get paths
+    repo_root = Path(__file__).parent.parent.parent
+    source_dir = repo_root / "meta-templates" / "agents-mcp"
+    target_path = Path(target_dir).resolve()
+
+    # Validate source directory exists
+    if not source_dir.exists():
+        console.print(
+            f"Source directory not found: {source_dir}",
+            style="red",
+        )
+        sys.exit(1)
+
+    # Ensure target directory exists
+    target_path.mkdir(parents=True, exist_ok=True)
+
+    console.print(f"Merging {source_dir} into {target_path}...", style="blue")
+
+    # Recursively copy, merging into the target directory
+    shutil.copytree(source_dir, target_path, dirs_exist_ok=True)
+    console.print("  ✓ Merge complete", style="green")
+
+    # Create symlink from CLAUDE.md to AGENTS.md
+    claude_md = target_path / "CLAUDE.md"
+
+    # Remove existing CLAUDE.md if it exists (whether file or symlink)
+    if claude_md.exists() or claude_md.is_symlink():
+        claude_md.unlink()
+
+    # Create the symlink
+    claude_md.symlink_to("AGENTS.md")
+    console.print("  ✓ Created symlink: CLAUDE.md -> AGENTS.md", style="green")
+
+    # If a ui directory exists, optionally merge the UI meta-templates
+    ui_target = target_path / "ui"
+    ui_source = repo_root / "meta-templates" / "agents-mcp-ui"
+    if ui_target.exists() and ui_target.is_dir():
+        if ui_source.exists() and ui_source.is_dir():
+            console.print(
+                f"Merging {ui_source} into {ui_target}...",
+                style="blue",
+            )
+            shutil.copytree(ui_source, ui_target, dirs_exist_ok=True)
+            console.print("  ✓ UI merge complete", style="green")
+
+            # Create symlink from ui/CLAUDE.md to ui/AGENTS.md
+            ui_claude_md = ui_target / "CLAUDE.md"
+            if ui_claude_md.exists() or ui_claude_md.is_symlink():
+                ui_claude_md.unlink()
+            ui_claude_md.symlink_to("AGENTS.md")
+            console.print(
+                "  ✓ Created UI symlink: ui/CLAUDE.md -> AGENTS.md", style="green"
+            )
+        else:
+            console.print(
+                f"Skipping UI merge: source not found at {ui_source}",
+                style="yellow",
+            )
+    else:
+        console.print(
+            "No ui directory found in target; skipping UI merge", style="yellow"
+        )
+
+    console.print(
+        f"\n✓ Successfully initialized agents-mcp files in {target_path}",
+        style="bold green",
+    )
+
+
 @cli.command("search-templates")
 @click.argument("query", type=str)
 @click.option("--limit", "limit", type=int, default=10, help="Max results to return")
 @click.option(
-    "--context", "context", type=int, default=3, help="Lines of context around matches"
-)
-@click.option(
-    "--format",
-    "fmt",
-    type=click.Choice(["json", "pretty"], case_sensitive=False),
-    default="pretty",
+    "--context", "context", type=int, default=10, help="Lines of context around matches"
 )
 def search_templates_cmd(query: str, limit: int, context: int) -> None:
     """Search the templates directory for files relevant to QUERY.

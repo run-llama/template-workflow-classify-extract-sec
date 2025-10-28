@@ -3,7 +3,9 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from tmpl.mcp.search import search_templates_impl, format_results_pretty
+import pytest
+
+from tmpl.mcp.search import search_templates_impl, format_results_pretty, get_template
 
 
 def test_search_finds_python_content() -> None:
@@ -92,3 +94,137 @@ default = "mock.workflow:workflow"
             # After the indicator, the text should contain 'workflows'
             text = line.split("*", 1)[1].strip()
             assert "workflows" in text.lower()
+
+
+# ============================================================================
+# get_template tests
+# ============================================================================
+
+
+def test_get_template_returns_file_with_line_numbers() -> None:
+    """Test that get_template returns file content with line numbers."""
+    result = get_template("basic/src/basic/workflow.py")
+    lines = result.splitlines()
+
+    # Should have line numbers
+    assert len(lines) > 0
+    # First line should be "     1| from workflows import ..."
+    assert lines[0].startswith("     1|")
+    assert "from workflows import" in lines[0]
+
+    # Check that line numbers are formatted correctly (right-aligned to 6 chars)
+    for i, line in enumerate(lines, start=1):
+        if line.startswith("//"):  # Skip omission notice
+            break
+        assert line.startswith(f"{i:6}|")
+
+
+def test_get_template_with_start_line() -> None:
+    """Test that start_line parameter works correctly."""
+    result = get_template("basic/src/basic/workflow.py", start_line=14)
+    lines = result.splitlines()
+
+    # Should start at line 14
+    assert lines[0].startswith("    14|")
+    assert "class BasicWorkflow" in lines[0]
+
+
+def test_get_template_with_end_line() -> None:
+    """Test that end_line parameter works correctly."""
+    result = get_template("basic/src/basic/workflow.py", end_line=5)
+    lines = result.splitlines()
+
+    # Should end at line 5
+    assert len(lines) == 5
+    assert lines[-1].startswith("     5|")
+
+
+def test_get_template_with_line_range() -> None:
+    """Test that start_line and end_line work together."""
+    result = get_template("basic/src/basic/workflow.py", start_line=14, end_line=21)
+    lines = result.splitlines()
+
+    # Should have exactly 8 lines (14-21 inclusive)
+    assert len(lines) == 8
+    assert lines[0].startswith("    14|")
+    assert lines[-1].startswith("    21|")
+    assert "class BasicWorkflow" in lines[0]
+    assert "StopEvent" in lines[-1]
+
+
+def test_get_template_max_lines_truncation() -> None:
+    """Test that max_lines parameter truncates output."""
+    result = get_template("basic/src/basic/workflow.py", max_lines=10)
+    lines = result.splitlines()
+
+    # Should have 10 content lines + 1 omission notice
+    assert len(lines) == 11
+    assert lines[-1].startswith("//")
+    assert "more line(s) omitted" in lines[-1]
+
+    # Should show exactly 10 lines of content
+    assert lines[9].startswith("    10|")
+
+
+def test_get_template_range_with_truncation() -> None:
+    """Test that max_lines works with line range."""
+    result = get_template(
+        "basic/src/basic/workflow.py", start_line=10, end_line=25, max_lines=5
+    )
+    lines = result.splitlines()
+
+    # Should have 5 content lines + omission notice
+    assert len(lines) == 6
+    assert lines[0].startswith("    10|")
+    assert lines[4].startswith("    14|")
+    assert "more line(s) omitted" in lines[-1]
+
+
+def test_get_template_invalid_path() -> None:
+    """Test that invalid path raises ValueError."""
+    with pytest.raises(ValueError, match="Template file not found"):
+        get_template("nonexistent/file.py")
+
+
+def test_get_template_clamping_out_of_range() -> None:
+    """Test that out-of-range line numbers are clamped."""
+    # Request lines beyond end of file
+    result = get_template("basic/src/basic/workflow.py", start_line=1, end_line=10000)
+    lines = result.splitlines()
+
+    # Should return all lines without error
+    assert len(lines) > 0
+    assert not any("omitted" in line for line in lines)
+
+
+def test_get_template_start_greater_than_end() -> None:
+    """Test that start > end is handled gracefully."""
+    result = get_template("basic/src/basic/workflow.py", start_line=20, end_line=10)
+    lines = result.splitlines()
+
+    # Should return empty or clamped range
+    assert len(lines) == 0
+
+
+def test_get_template_no_truncation_for_small_files() -> None:
+    """Test that small files don't show omission notice."""
+    result = get_template("basic/src/basic/workflow.py")
+    lines = result.splitlines()
+
+    # Should not have omission notice for a file under 1000 lines
+    assert not any("omitted" in line for line in lines)
+
+
+def test_get_template_line_number_alignment() -> None:
+    """Test that line numbers are properly right-aligned to 6 characters."""
+    result = get_template("basic/src/basic/workflow.py")
+    lines = result.splitlines()
+
+    for line in lines:
+        if line.startswith("//"):  # Skip omission notice
+            continue
+        # Line number should be exactly 6 chars before the pipe
+        parts = line.split("|", 1)
+        assert len(parts) == 2
+        assert len(parts[0]) == 6
+        assert parts[0].strip().isdigit()

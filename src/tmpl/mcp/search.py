@@ -6,6 +6,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Dict, Tuple, Optional
+import fnmatch
 
 
 # -----------------------------
@@ -44,6 +45,12 @@ _exclude_dirs = {
     "out",
 }
 
+_exclude_patterns = {
+    "*lock.json",
+    "*lock.yaml",
+    "*.lock",
+}
+
 
 def _iter_template_files(templates_dir: Path) -> Iterable[Path]:
     """Yield code/content files under templates directory, skipping heavy dirs."""
@@ -54,6 +61,12 @@ def _iter_template_files(templates_dir: Path) -> Iterable[Path]:
         # Prune heavy/irrelevant directories in-place
         dirnames[:] = [d for d in dirnames if d not in _exclude_dirs]
 
+        # In the function:
+        filenames[:] = [
+            f
+            for f in filenames
+            if not any(fnmatch.fnmatch(f, pattern) for pattern in _exclude_patterns)
+        ]
         for fname in filenames:
             path = Path(root) / fname
             if path.suffix.lower() not in _include_ext:
@@ -174,6 +187,69 @@ def _detect_repo_root(explicit_root: Optional[Path]) -> Path:
         return cwd_root
     # Fallback to module location
     return _find_repo_root(Path(__file__).resolve())
+
+
+def get_template(
+    relative_path: str,
+    start_line: Optional[int] = None,
+    end_line: Optional[int] = None,
+    max_lines: int = 1000,
+) -> str:
+    """Get a template file with line numbers.
+
+    Args:
+        relative_path: Path relative to templates directory
+        start_line: Optional starting line number (1-indexed, inclusive)
+        end_line: Optional ending line number (1-indexed, inclusive)
+        max_lines: Maximum number of lines to return (default 1000)
+
+    Returns:
+        File contents with line numbers prefixed to each line
+    """
+    repo_root = _detect_repo_root(Path.cwd())
+    templates_dir = repo_root / "templates"
+    if not templates_dir.exists():
+        raise ValueError(f"Templates directory not found at {templates_dir}")
+    path = templates_dir / relative_path
+    if not path.exists():
+        raise ValueError(f"Template file not found at {path}")
+
+    content = path.read_text(encoding="utf-8", errors="ignore")
+    lines = content.splitlines()
+    total_lines = len(lines)
+
+    # Apply range filtering if specified
+    if start_line is not None or end_line is not None:
+        # Convert to 0-indexed
+        start_idx = (start_line - 1) if start_line is not None else 0
+        end_idx = end_line if end_line is not None else total_lines
+
+        # Clamp to valid range
+        start_idx = max(0, min(start_idx, total_lines))
+        end_idx = max(start_idx, min(end_idx, total_lines))
+
+        lines = lines[start_idx:end_idx]
+        line_offset = start_idx
+    else:
+        line_offset = 0
+
+    # Apply max_lines cap
+    lines_to_show = lines[:max_lines]
+    omitted_count = len(lines) - len(lines_to_show)
+
+    # Format with line numbers
+    result_lines = []
+    for i, line in enumerate(lines_to_show, start=line_offset + 1):
+        # Right-align line numbers to 6 characters for consistency
+        result_lines.append(f"{i:6}| {line}")
+
+    result = "\n".join(result_lines)
+
+    # Add omission notice if needed
+    if omitted_count > 0:
+        result += f"\n// {omitted_count} more line(s) omitted"
+
+    return result
 
 
 def search_templates_impl(

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "tmpl": {
+      "type": "stdio",
+      "command": "tmpl",
+      "args": [
+        "mcp-stdio"
+      ],
+      "env": {}
+    },
+    "llama-index-docs": {
+      "type": "http",
+      "url": "https://developers.llamaindex.ai/mcp"
+    }
+  }
+}

@@ -109,7 +109,11 @@ It is autoconfigured for cursor in `.cursor/mcp.json`.
 
 ```json
     "tmpl": {
-      "command": "uv",
-      "args": ["run", "tmpl", "mcp-stdio"]
+      "command": "tmpl",
+      "args": ["mcp-stdio"]
     }
 ```
+
+To use it, you will need to install `tmpl` globally. You can do this by running `uv tool install .` in this directory.
+
+To add it to a template during development (it's files will be gitignored), run `tmpl init-agents-mcp`.
