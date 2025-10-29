@@ -3,7 +3,7 @@
 A document question-answering application built with LlamaIndex workflows and LlamaCloud services.
 
 
-This application uses LlamaDeploy. For more information see [the docs](https://developers.llamaindex.ai/python/cloud/llamaagents/getting-started)
+This application uses LlamaDeploy. For more information see [the docs](https://developers.llamaindex.ai/python/llamaagents/llamactl/getting-started/)
 
 # Getting Started
 

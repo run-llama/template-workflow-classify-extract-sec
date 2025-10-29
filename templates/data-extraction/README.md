@@ -1,6 +1,6 @@
 # Data Extraction and Ingestion
 
-This is a starter for a Llama Agents. See the [documentation](https://developers.llamaindex.ai/python/cloud/llamaagents/getting-started) for more info.
+This is a starter for a Llama Agents. See the [documentation](https://developers.llamaindex.ai/python/llamaagents/llamactl/getting-started/) for more info.
 
 The backend contains a single workflow that runs LlamaCloud Extraction, given your schema. The frontend exposes an
 extraction review UI, where you can review and correct extractions. 
