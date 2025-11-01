@@ -1,21 +1,48 @@
 # Data Extraction and Ingestion
 
-This is a starter for a Llama Agents. See the [documentation](https://developers.llamaindex.ai/python/llamaagents/llamactl/getting-started/) for more info.
+This is a starter for LlamaAgents. See the [LlamaAgents (llamactl) getting started guide](https://developers.llamaindex.ai/python/llamaagents/llamactl/getting-started/) for context on local development and deployment.
 
-The backend contains a single workflow that runs LlamaCloud Extraction, given your schema. The frontend exposes an
-extraction review UI, where you can review and correct extractions. 
+To run the application, install [`uv`](https://docs.astral.sh/uv/) and run `uvx llamactl serve`.
 
-## Customizing the schema.
+## Simple customizations
 
-The starter contains a placeholder `MySchema` that is used for extraction. See [`schema.py`](./src/extraction_review/schemas.py). 
+For some basic customizations, you can modify `src/extraction_review/config.py`
 
-You should customize this `schema.py` for your use case to modify the extracted data. You can also rename the schema from `MySchema` to 
-something more appropriate for your use case. Do a find and replace on "MySchema" to also fix the frontend references.
+- **`USE_REMOTE_EXTRACTION_SCHEMA`**: Set to `False` to define your own Pydantic `ExtractionSchema` in this file. Set to `True` to reuse the schema from an existing LlamaCloud Extraction Agent.
+- **`EXTRACTION_AGENT_NAME`**: Logical name for your Extraction Agent. When `USE_REMOTE_EXTRACTION_SCHEMA` is `False`, this name is used to upsert the agent with your local schema; when `True`, it is used to fetch an existing agent.
+- **`EXTRACTED_DATA_COLLECTION`**: The Agent Data collection name used to store extractions (namespaced by agent name and environment).
+- **`ExtractionSchema`**: When using a local schema, edit this Pydantic model to match the fields you want extracted. Prefer optional types where possible to allow for partial extractions.
 
-The frontend has a copy of the schema as a json schema, that it uses to introspect and generate an editing UI. Run `uv run export-types` to regenerate the frontend json schema.
+The UI fetches the JSON Schema and collection name from the backend metadata workflow at runtime, and dynamically
+generates an editing UI based on the schema.
 
-## Customizing the application
+## Complex customizations
 
-This is meant to just be a starting place. You can add more workflows, and trigger them from the UI. For example, you could
-add functionality sync to a downstream data sink to export the corrected data after review. Or you could add a workflow
-that monitors a data source, and automatically triggers the extraction against the file.
+For more complex customizations, you can edit the rest of the application. For example, you could
+- Modify the existing file processing workflow to provide additional context for the extraction process
+- Take further action based on the extracted data.
+- Add additional workflows to submit data upon approval.
+
+## Linting and type checking
+
+Python and javascript pacakges contain helpful scripts to lint, format, and type check the code.
+
+To check and fix python code:
+
+```bash
+uv run hatch run lint
+uv run hatch run typecheck
+uv run hatch run test
+# run all at once
+uv run hatch run all-fix
+```
+
+To check and fix javascript code, within the `ui` directory:
+
+```bash
+pnpm run lint
+pnpm run typecheck
+pnpm run test
+# run all at once
+pnpm run all-fix
+```

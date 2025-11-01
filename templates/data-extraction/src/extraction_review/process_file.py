@@ -10,12 +10,12 @@ import httpx
 from llama_cloud import ExtractRun
 from llama_cloud_services.extract import SourceText
 from llama_cloud_services.beta.agent_data import ExtractedData, InvalidExtractionData
+from pydantic import BaseModel
 from workflows import Context, Workflow, step
 from workflows.events import Event, StartEvent, StopEvent
-from workflows.retry_policy import ConstantDelayRetryPolicy
 
-from .config import get_llama_cloud_client, get_data_client, get_extract_agent
-from .schemas import MySchema
+from .clients import get_llama_cloud_client, get_data_client, get_extract_agent
+from .schema import get_extraction_schema
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +25,11 @@ class FileEvent(StartEvent):
 
 
 class DownloadFileEvent(Event):
-    file_id: str
+    pass
 
 
 class FileDownloadedEvent(Event):
-    file_id: str
-    file_path: str
-    filename: str
+    pass
 
 
 class UIToast(Event):
@@ -40,11 +38,17 @@ class UIToast(Event):
 
 
 class ExtractedEvent(Event):
-    data: ExtractedData[MySchema]
+    data: ExtractedData
 
 
 class ExtractedInvalidEvent(Event):
     data: ExtractedData[dict[str, Any]]
+
+
+class ExtractionState(BaseModel):
+    file_id: str | None = None
+    file_path: str | None = None
+    filename: str | None = None
 
 
 class ProcessFileWorkflow(Workflow):
@@ -52,22 +56,27 @@ class ProcessFileWorkflow(Workflow):
     Given a file path, this workflow will process a single file through the custom extraction logic.
     """
 
-    @step(retry_policy=ConstantDelayRetryPolicy(maximum_attempts=3, delay=10))
-    async def run_file(self, event: FileEvent) -> DownloadFileEvent:
+    @step()
+    async def run_file(self, event: FileEvent, ctx: Context) -> DownloadFileEvent:
         logger.info(f"Running file {event.file_id}")
-        return DownloadFileEvent(file_id=event.file_id)
+        async with ctx.store.edit_state() as state:
+            state.file_id = event.file_id
+        return DownloadFileEvent()
 
-    @step(retry_policy=ConstantDelayRetryPolicy(maximum_attempts=3, delay=10))
+    @step()
     async def download_file(
-        self, event: DownloadFileEvent, ctx: Context
+        self, event: DownloadFileEvent, ctx: Context[ExtractionState]
     ) -> FileDownloadedEvent:
         """Download the file reference from the cloud storage"""
+        state = await ctx.store.get_state()
+        if state.file_id is None:
+            raise ValueError("File ID is not set")
         try:
             file_metadata = await get_llama_cloud_client().files.get_file(
-                id=event.file_id
+                id=state.file_id
             )
             file_url = await get_llama_cloud_client().files.read_file_content(
-                event.file_id
+                state.file_id
             )
 
             temp_dir = tempfile.gettempdir()
@@ -82,37 +91,43 @@ class ProcessFileWorkflow(Workflow):
                     async for chunk in response.aiter_bytes():
                         f.write(chunk)
             logger.info(f"Downloaded file {file_url.url} to {file_path}")
-            return FileDownloadedEvent(
-                file_id=event.file_id, file_path=file_path, filename=filename
-            )
+            async with ctx.store.edit_state() as state:
+                state.file_path = file_path
+                state.filename = filename
+            return FileDownloadedEvent()
+
         except Exception as e:
-            logger.error(f"Error downloading file {event.file_id}: {e}", exc_info=True)
+            logger.error(f"Error downloading file {state.file_id}: {e}", exc_info=True)
             ctx.write_event_to_stream(
                 UIToast(
                     level="error",
-                    message=f"Error downloading file {event.file_id}: {e}",
+                    message=f"Error downloading file {state.file_id}: {e}",
                 )
             )
             raise e
 
-    @step(retry_policy=ConstantDelayRetryPolicy(maximum_attempts=3, delay=10))
+    @step()
     async def process_file(
-        self, event: FileDownloadedEvent, ctx: Context
+        self, event: FileDownloadedEvent, ctx: Context[ExtractionState]
     ) -> ExtractedEvent | ExtractedInvalidEvent:
         """Runs the extraction against the file"""
+        state = await ctx.store.get_state()
+        if state.file_path is None or state.filename is None:
+            raise ValueError("File path or filename is not set")
         try:
             agent = get_extract_agent()
+            schema = await get_extraction_schema()
             # track the content of the file, so as to be able to de-duplicate
-            file_content = Path(event.file_path).read_bytes()
+            file_content = Path(state.file_path).read_bytes()
             file_hash = hashlib.sha256(file_content).hexdigest()
             source_text = SourceText(
-                file=event.file_path,
-                filename=event.filename,
+                file=state.file_path,
+                filename=state.filename,
             )
-            logger.info(f"Extracting data from file {event.filename}")
+            logger.info(f"Extracting data from file {state.filename}")
             ctx.write_event_to_stream(
                 UIToast(
-                    level="info", message=f"Extracting data from file {event.filename}"
+                    level="info", message=f"Extracting data from file {state.filename}"
                 )
             )
             extracted_result: ExtractRun = await agent.aextract(source_text)
@@ -120,7 +135,7 @@ class ProcessFileWorkflow(Workflow):
                 logger.info(f"Extracted data: {extracted_result}")
                 data = ExtractedData.from_extraction_result(
                     result=extracted_result,
-                    schema=MySchema,
+                    schema=schema,
                     file_hash=file_hash,
                 )
                 return ExtractedEvent(data=data)
@@ -129,18 +144,18 @@ class ProcessFileWorkflow(Workflow):
                 return ExtractedInvalidEvent(data=e.invalid_item)
         except Exception as e:
             logger.error(
-                f"Error extracting data from file {event.filename}: {e}",
+                f"Error extracting data from file {state.filename}: {e}",
                 exc_info=True,
             )
             ctx.write_event_to_stream(
                 UIToast(
                     level="error",
-                    message=f"Error extracting data from file {event.filename}: {e}",
+                    message=f"Error extracting data from file {state.filename}: {e}",
                 )
             )
             raise e
 
-    @step(retry_policy=ConstantDelayRetryPolicy(maximum_attempts=3, delay=10))
+    @step()
     async def record_extracted_data(
         self, event: ExtractedEvent | ExtractedInvalidEvent, ctx: Context
     ) -> StopEvent:

@@ -1,12 +1,13 @@
-import { MySchema } from "@/schemas/MySchema";
 import { ExtractedData } from "llama-cloud-services/beta/agent";
 import {
   ApiClients,
   createWorkflowsClient,
   createWorkflowsConfig,
+  createCloudAgentClient,
+  cloudApiClient,
 } from "@llamaindex/ui";
-import { createCloudAgentClient, cloudApiClient } from "@llamaindex/ui";
-import { AGENT_NAME, EXTRACTED_DATA_COLLECTION } from "./config";
+import { AGENT_NAME } from "./config";
+import type { Metadata } from "./useMetadata";
 
 const platformToken = import.meta.env.VITE_LLAMA_CLOUD_API_KEY;
 const apiBaseUrl = import.meta.env.VITE_LLAMA_CLOUD_BASE_URL;
@@ -24,22 +25,27 @@ cloudApiClient.setConfig({
   },
 });
 
-const agentClient = createCloudAgentClient<ExtractedData<MySchema>>({
-  client: cloudApiClient,
-  windowUrl: typeof window !== "undefined" ? window.location.href : undefined,
-  collection: EXTRACTED_DATA_COLLECTION,
-});
+export function createBaseWorkflowClient(): ReturnType<
+  typeof createWorkflowsClient
+> {
+  return createWorkflowsClient(
+    createWorkflowsConfig({
+      baseUrl: `/deployments/${AGENT_NAME}/`,
+    }),
+  );
+}
 
-const workflowsClient = createWorkflowsClient(
-  createWorkflowsConfig({
-    baseUrl: `/deployments/${AGENT_NAME}/`,
-  }),
-);
+export function createClients(metadata: Metadata): ApiClients {
+  const workflowsClient = createBaseWorkflowClient();
+  const agentClient = createCloudAgentClient<ExtractedData<any>>({
+    client: cloudApiClient,
+    windowUrl: typeof window !== "undefined" ? window.location.href : undefined,
+    collection: metadata.extracted_data_collection,
+  });
 
-const clients: ApiClients = {
-  workflowsClient: workflowsClient,
-  cloudApiClient: cloudApiClient,
-  agentDataClient: agentClient,
-};
-
-export { clients, agentClient };
+  return {
+    workflowsClient,
+    cloudApiClient,
+    agentDataClient: agentClient,
+  } as ApiClients;
+}

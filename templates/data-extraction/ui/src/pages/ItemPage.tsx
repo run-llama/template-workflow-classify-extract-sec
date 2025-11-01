@@ -9,23 +9,22 @@ import {
 } from "@llamaindex/ui";
 import { Clock, XCircle, Download } from "lucide-react";
 import { useParams } from "react-router-dom";
-import type { MySchema } from "../schemas/MySchema";
-import MyJsonSchema from "../schemas/MySchema.json" with { type: "json" };
 import { useToolbar } from "@/lib/ToolbarContext";
 import { useNavigate } from "react-router-dom";
 import { modifyJsonSchema } from "@llamaindex/ui/lib";
 import { APP_TITLE } from "@/lib/config";
 import { downloadExtractedDataItem } from "@/lib/export";
+import { useMetadataContext } from "@/lib/MetadataProvider";
 
 export default function ItemPage() {
   const { itemId } = useParams<{ itemId: string }>();
   const { setButtons, setBreadcrumbs } = useToolbar();
   const [highlight, setHighlight] = useState<Highlight | undefined>(undefined);
-
+  const { metadata } = useMetadataContext();
   // Use the hook to fetch item data
-  const itemHookData = useItemData<MySchema>({
+  const itemHookData = useItemData<any>({
     // order/remove fields as needed here
-    jsonSchema: modifyJsonSchema(MyJsonSchema as any, {}),
+    jsonSchema: modifyJsonSchema(metadata.json_schema, {}),
     itemId: itemId as string,
     isMock: false,
   });
@@ -67,7 +66,7 @@ export default function ItemPage() {
           <Download className="h-4 w-4 mr-2" />
           Export JSON
         </Button>
-        <AcceptReject<MySchema>
+        <AcceptReject<any>
           itemData={itemHookData}
           onComplete={() => navigate("/")}
         />
@@ -128,7 +127,7 @@ export default function ItemPage() {
       <div className="flex-1 bg-white h-full overflow-y-auto">
         <div className="p-4 space-y-4">
           {/* Extracted Data */}
-          <ExtractedDataDisplay<MySchema>
+          <ExtractedDataDisplay<any>
             extractedData={itemData.data}
             title="Extracted Data"
             onChange={(updatedData) => {

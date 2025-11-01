@@ -1,75 +1,47 @@
-import functools
+"""
+For simple configuration of the extraction review application, just customize this file.
+
+If you need more control, feel free to edit the rest of the application
+"""
+
+from __future__ import annotations
 import os
-import httpx
+from typing import Type
 
-import dotenv
-from llama_cloud_services import ExtractionAgent, LlamaExtract
-from llama_cloud_services.extract import ExtractConfig, ExtractMode
-from llama_cloud.core.api_error import ApiError
-from llama_cloud_services.beta.agent_data import AsyncAgentDataClient, ExtractedData
-from llama_cloud.client import AsyncLlamaCloud
-from .schemas import MySchema
+from pydantic import BaseModel, Field
 
-dotenv.load_dotenv()
-
-# deployed agents may infer their name from the deployment name
-# Note: Make sure that an agent deployment with this name actually exists
-# otherwise calls to get or set data will fail. You may need to adjust the `or `
-# name for development
-agent_name = os.getenv("LLAMA_DEPLOY_DEPLOYMENT_NAME")
-agent_name_or_default = agent_name or "extraction-review"
-# required for all llama cloud calls
-api_key = os.environ["LLAMA_CLOUD_API_KEY"]
-# get this in case running against a different environment than production
-base_url = os.getenv("LLAMA_CLOUD_BASE_URL")
-extracted_data_collection = "extraction-review"
-project_id = os.getenv("LLAMA_DEPLOY_PROJECT_ID")
+# If you change this to true, the schema will be fetched from the remote extraction agent,
+# rather then using the ExtractionSchema defined below.
+USE_REMOTE_EXTRACTION_SCHEMA: bool = False
+# The name of the extraction agent to use. Prefers the name of this deployment when deployed to isolate environments.
+# Note that the application will create a new agent from the below ExtractionSchema if the extraction agent does not yet exist.
+EXTRACTION_AGENT_NAME: str = (
+    os.getenv("LLAMA_DEPLOY_DEPLOYMENT_NAME") or "extraction-review"
+)
+# The name of the collection to use for storing extracted data. This will be qualified by the agent name.
+# When developing locally, this will use the _public collection (shared within the project), otherwise agent
+# data is isolated to each agent
+EXTRACTED_DATA_COLLECTION: str = "extraction-review"
 
 
-@functools.lru_cache(maxsize=None)
-def get_extract_agent() -> ExtractionAgent:
-    extract_api = LlamaExtract(
-        api_key=api_key, base_url=base_url, project_id=project_id
+# Modify this to match the fields you want extracted.
+# - Use comments as prompts for the extraction agent.
+# - Make fields optional or specify via a comment to provide a default value when the document may not contain
+# the information.
+# - Sub objects may be provided via sub-classes of BaseModel. Note that dicts are not supported: all available
+#   fields must be defined
+class ExtractionSchema(BaseModel):
+    document_type: str = Field(
+        description="An overarching category for the type of document (e.g. invoice, purchase order, etc.)"
     )
-    config = ExtractConfig(
-        extraction_mode=ExtractMode.PREMIUM,
-        system_prompt=None,
-        # advanced
-        use_reasoning=False,
-        cite_sources=False,
-        confidence_scores=True,
+    summary: str = Field(
+        description="A 2-3 sentence summary describing the content of the document"
     )
-    try:
-        existing = extract_api.get_agent(agent_name_or_default)
-        existing.data_schema = MySchema
-        existing.config = config
-        return existing
-    except ApiError as e:
-        if e.status_code == 404:
-            return extract_api.create_agent(
-                name=agent_name_or_default, data_schema=MySchema, config=config
-            )
-        else:
-            raise
-
-
-@functools.lru_cache(maxsize=None)
-def get_data_client() -> AsyncAgentDataClient:
-    return AsyncAgentDataClient(
-        deployment_name=agent_name,
-        collection=extracted_data_collection,
-        # update MySchema for your schema, but retain the ExtractedData container
-        type=ExtractedData[MySchema],
-        client=get_llama_cloud_client(),
+    key_points: list[str] = Field(
+        description="A list of key points or insights from the document"
     )
 
 
-@functools.lru_cache(maxsize=None)
-def get_llama_cloud_client():
-    return AsyncLlamaCloud(
-        base_url=base_url,
-        token=api_key,
-        httpx_client=httpx.AsyncClient(
-            timeout=60, headers={"Project-Id": project_id} if project_id else None
-        ),
-    )
+SCHEMA: Type[BaseModel] | None = (
+    None if USE_REMOTE_EXTRACTION_SCHEMA else ExtractionSchema
+)

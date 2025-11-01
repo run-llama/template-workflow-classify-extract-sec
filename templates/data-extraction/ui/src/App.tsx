@@ -6,12 +6,11 @@ import {
   BreadcrumbItem,
   BreadcrumbList,
   BreadcrumbSeparator,
-  ApiProvider,
 } from "@llamaindex/ui";
 import { Link } from "react-router-dom";
 import { Toaster } from "@llamaindex/ui";
 import { useToolbar, ToolbarProvider } from "@/lib/ToolbarContext";
-import { clients } from "@/lib/client";
+import { MetadataProvider } from "@/lib/MetadataProvider";
 
 // Import pages
 import HomePage from "./pages/HomePage";
@@ -20,7 +19,7 @@ import ItemPage from "./pages/ItemPage";
 export default function App() {
   return (
     <Theme>
-      <ApiProvider clients={clients}>
+      <MetadataProvider>
         <ToolbarProvider>
           <div className="grid grid-rows-[auto_1fr] h-screen">
             <Toolbar />
@@ -33,7 +32,7 @@ export default function App() {
           </div>
           <Toaster />
         </ToolbarProvider>
-      </ApiProvider>
+      </MetadataProvider>
     </Theme>
   );
 }
