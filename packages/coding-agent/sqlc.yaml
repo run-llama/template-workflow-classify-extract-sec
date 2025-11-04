@@ -1,0 +1,18 @@
+# filename: sqlc.yaml
+version: "2"
+plugins:
+  - name: python
+    wasm:
+      url: https://github.com/rayakame/sqlc-gen-better-python/releases/download/v0.4.5/sqlc-gen-better-python.wasm
+      sha256: 9b42f7cffda942388470e777af957ec8ab03cbea9124ff8c49bef05f9d00cb66
+sql:
+  - engine: "sqlite"
+    queries: "query.sql"
+    schema: "schema.sql"
+    codegen:
+      - out: "src/coding_agent/persistence"
+        plugin: python
+        options:
+          package: "coding_agent.persistence"
+          emit_init_file: true
+          sql_driver: "aiosqlite"

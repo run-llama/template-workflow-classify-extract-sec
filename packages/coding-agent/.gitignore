@@ -1,0 +1,5 @@
+.claude/
+claude_memory.db
+CLAUDE.md
+.mcp.json
+sessions.db

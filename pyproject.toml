@@ -59,3 +59,9 @@ tmpl-all-fix = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.uv.sources]
+coding-agent = {workspace = true}
+
+[tool.uv.workspace]
+members = ["packages/*"]

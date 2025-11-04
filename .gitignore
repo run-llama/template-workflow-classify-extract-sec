@@ -5,3 +5,6 @@ __pycache__/
 .venv
 /.copier-answers.yml
 node_modules
+build/
+dist/
+*egg-info/
