@@ -3,7 +3,7 @@ templates:
     remote: data-extraction
     url: https://github.com/run-llama/template-workflow-data-extraction.git
     branch: main
-    version: 0.2.0
+    version: 0.2.1
   document-qa:
     remote: document-qa
     url: https://github.com/run-llama/template-workflow-document-qa.git

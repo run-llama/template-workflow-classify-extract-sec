@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, TypedDict
 
 import requests
-import posthog
+from posthog import Posthog
 
 
 GITHUB_API_BASE = "https://api.github.com"
@@ -162,12 +162,10 @@ def send_posthog_event(
         api_key or os.getenv("POSTHOG_API_KEY") or os.getenv("POSTHOG_PROJECT_API_KEY")
     )
     host = host or os.getenv("POSTHOG_HOST") or "https://us.posthog.com"
-    if not api_key:
+    if api_key is None:
         raise RuntimeError("POSTHOG_API_KEY is required to send metrics")
 
-    posthog.api_key = api_key
-    posthog.host = host
-    posthog.capture(
+    Posthog(project_api_key=api_key, host=host).capture(
         distinct_id=distinct_id, event=event, properties=properties, timestamp=timestamp
     )
 

@@ -41,6 +41,7 @@ def _parse_mapping_dict(data: dict[str, object]) -> dict[str, TemplatesMapping]:
         assert isinstance(branch, str)
         version = v.get("version")
         assert isinstance(version, str) or version is None
+        assert isinstance(k, str), "Key of mapping must be a string"
         out[k] = TemplatesMapping(
             remote=remote,
             url=url,

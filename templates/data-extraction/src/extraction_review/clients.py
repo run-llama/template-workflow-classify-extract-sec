@@ -4,13 +4,13 @@ from typing import Any
 import httpx
 
 from llama_cloud_services import ExtractionAgent, LlamaExtract
-from llama_cloud_services.extract import ExtractConfig, ExtractMode
 from llama_cloud.core.api_error import ApiError
 from llama_cloud_services.beta.agent_data import AsyncAgentDataClient, ExtractedData
 from llama_cloud.client import AsyncLlamaCloud
 import logging
 
 from extraction_review.config import (
+    EXTRACT_CONFIG,
     EXTRACTED_DATA_COLLECTION,
     EXTRACTION_AGENT_NAME,
     USE_REMOTE_EXTRACTION_SCHEMA,
@@ -36,19 +36,12 @@ def get_extract_agent() -> ExtractionAgent:
     extract_api = LlamaExtract(
         api_key=api_key, base_url=base_url, project_id=project_id
     )
-    config = ExtractConfig(
-        extraction_mode=ExtractMode.PREMIUM,
-        system_prompt=None,
-        # advanced
-        use_reasoning=False,
-        cite_sources=False,
-        confidence_scores=True,
-    )
+
     try:
         existing = extract_api.get_agent(EXTRACTION_AGENT_NAME)
         if not USE_REMOTE_EXTRACTION_SCHEMA:
             existing.data_schema = ExtractionSchema
-        existing.config = config
+            existing.config = EXTRACT_CONFIG
         return existing
     except ApiError as e:
         if e.status_code == 404:
@@ -57,7 +50,9 @@ def get_extract_agent() -> ExtractionAgent:
                     "Extraction agent does not exist, creating a new one from the local schema"
                 )
             return extract_api.create_agent(
-                name=EXTRACTION_AGENT_NAME, data_schema=ExtractionSchema, config=config
+                name=EXTRACTION_AGENT_NAME,
+                data_schema=ExtractionSchema,
+                config=EXTRACT_CONFIG,
             )
         else:
             raise

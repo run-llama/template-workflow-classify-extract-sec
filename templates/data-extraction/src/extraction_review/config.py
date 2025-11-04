@@ -8,10 +8,12 @@ from __future__ import annotations
 import os
 from typing import Type
 
+from llama_cloud import ExtractConfig
+from llama_cloud_services.extract import ExtractMode
 from pydantic import BaseModel, Field
 
-# If you change this to true, the schema will be fetched from the remote extraction agent,
-# rather then using the ExtractionSchema defined below.
+# If you change this to true, the schema and extraction configuration will be fetched from the remote extraction agent
+# rather than using the ExtractionSchema and configuration defined below.
 USE_REMOTE_EXTRACTION_SCHEMA: bool = False
 # The name of the extraction agent to use. Prefers the name of this deployment when deployed to isolate environments.
 # Note that the application will create a new agent from the below ExtractionSchema if the extraction agent does not yet exist.
@@ -40,6 +42,17 @@ class ExtractionSchema(BaseModel):
     key_points: list[str] = Field(
         description="A list of key points or insights from the document"
     )
+
+
+# This is only used if USE_REMOTE_EXTRACTION_SCHEMA is False.
+EXTRACT_CONFIG = ExtractConfig(
+    extraction_mode=ExtractMode.PREMIUM,
+    system_prompt=None,
+    # advanced. Only compatible with Premium mode.
+    use_reasoning=False,
+    cite_sources=False,
+    confidence_scores=True,
+)
 
 
 SCHEMA: Type[BaseModel] | None = (
