@@ -1,5 +1,0 @@
-workflows.db
-.venv
-.env
-package-lock.json
-node_modules

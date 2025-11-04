@@ -1,7 +1,0 @@
-- A classify client should be added to the project
-- The frontend should have minimal changes that load all of the 4 schemas rather than just one schema
-- The item details page should select the schema based on the classification
-- There are no lint ignore errors
-- There are no getattr/setattr/hasattr calls in the code
-- There should be a new step dedicated to classify
-- The generated schema is appropriate given the use case of "financial analysis & investment research"
