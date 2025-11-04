@@ -8,3 +8,5 @@ node_modules
 build/
 dist/
 *egg-info/
+claude_memory.db
+.DS_Store

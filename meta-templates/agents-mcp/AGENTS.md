@@ -47,17 +47,21 @@ Coding Style:
 - Don't mix environment variable parsing, and client or service configuration into the main code files. Organize dependencies and env var configuration into a stand-alone file. E.g. `config.py`. If dependencies grow, split up the files further.
 - Add and run unit tests to validate your changes.
 
-Workflows:
+Workflows and Workflows served via `llamactl` CLI:
 - workflow state and events are stored durably. Avoid storing large amounts of data in the state, or passing around large amounts of data in events.
 - Try to split steps up into different workflow steps if possible, instead of putting too much logic per workflow step.
+- Data that should be published to the client should be written with `ctx.write_event_to_stream()` from the workflow's steps. 
 - Prefer to use typed APIs with the workflows library: 
-  - Subclass StartEvent, StopEvent, InputRequiredEvent, HumanResponseEvent with custom
+  - Subclass `StartEvent`, `StopEvent`, `InputRequiredEvent`, `HumanResponseEvent` with custom
     types in order to clearly define the expected input and output of the workflow step.
-  - When using the Workflow state store, create a custom state type, and use typed Context, e.g. Context[MyStateType], then calls to `state = await ctx.store.get_state()` and `async with ctx.store.edit_state() as state`, will have `MyStateType` as the type of the `state` variable.
+  - When using the Workflow state store, create a custom state type, and use typed Context, e.g. `Context[MyStateType]`, then calls to `state = await ctx.store.get_state()` and `async with ctx.store.edit_state() as state` will have `MyStateType` as the type of the `state` variable.
   - Use annotated resource parameters in workflow steps for dependency injection. e.g. `def my_step(ctx: Context, ev: StartEvent, llm: Annotated[OpenAI, Resource(get_llm)])`
+- When adding new workflows that should be exposed, make sure to configure the pyproject.toml for the `llamactl` CLI with a `[tool.llamadeploy]` section.
+- Usually, just configure workflows with a None timeout unless they really should have a timeout.
 
 LlamaCloud:
 - Use llama cloud services (Parsing, Extracting, Indexes, Agent Data) where relevant. LlamaAgent projects, like this one, are meant to be built on top of these services.
+- Make use of Agent Data to store useful information that may want to be queried by a client, without requiring a workflow as a go-between
 - Types in LlamaExtract's extracted schema should generally be optional - to allow LlamaExtract room to fail (it can sometimes return None for fields, and if the field is typed as required the script will break).
 - AsyncAgentDataClient has a generic for the schema of the data. Make use of it to facilitate type safety and autocomplete. For example `AsyncAgentDataClient[ExtractedData[InvoiceData]]` for extracted data, or `AsyncAgentDataClient[SomeOtherDataSchema]` for misc data.
 
@@ -71,8 +75,3 @@ Integrations:
 - When building llama cloud based workflows, pass around llama cloud file references, rather than file paths. Reference and search the other existing templates to understand llama cloud file integrations to upload and download files.
 - When storing results from LlamaExtract, use `ExtractedData.from_extraction_result(extraction_result)`. `ExtractedData` parses, and has  fields to store: citations, confidence scores, and track human corrections to the extracted data.
 - When adding new environment variables that are critical to the functionality of the workflow, update the `pyproject.toml` with `required_env_vars = ["NEW_ENV_VAR"]` in the `[tool.llamadeploy]` section. This will prompt users to input them before starting the workflow.
-
-
-
-
-

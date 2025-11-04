@@ -23,7 +23,7 @@ if not TOKEN:
 
 # Build repo names (include org in each repo name)
 repos = [
-    "template-workflow-showcase",
+    "template-workflow-classify-extract-sec",
 ]
 
 API = "https://api.github.com"
