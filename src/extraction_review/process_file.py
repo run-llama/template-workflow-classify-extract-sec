@@ -348,23 +348,16 @@ class ProcessFileWorkflow(Workflow):
             )
             # remove past data when reprocessing the same file
             if event.data.file_hash:
-                existing_data = await get_data_client().untyped_search(
+                await get_data_client().delete(
                     filter={
                         "file_hash": {
                             "eq": event.data.file_hash,
                         },
                     },
                 )
-                if existing_data.items:
-                    logger.info(
-                        f"Removing past data for file {event.data.file_name} with hash {event.data.file_hash}"
-                    )
-                    await asyncio.gather(
-                        *[
-                            get_data_client().delete_item(item.id)
-                            for item in existing_data.items
-                        ]
-                    )
+                logger.info(
+                    f"Removing past data for file {event.data.file_name} with hash {event.data.file_hash}"
+                )
             # finally, save the new data
             item_id = await get_data_client().create_item(event.data)
             return StopEvent(
