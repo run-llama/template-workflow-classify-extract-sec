@@ -18,7 +18,7 @@ USE_REMOTE_EXTRACTION_SCHEMA: bool = False
 # The name of the extraction agent to use. Prefers the name of this deployment when deployed to isolate environments.
 # Note that the application will create a new agent from the below ExtractionSchema if the extraction agent does not yet exist.
 EXTRACTION_AGENT_NAME: str = (
-    os.getenv("LLAMA_DEPLOY_DEPLOYMENT_NAME") or "extraction-review"
+    os.getenv("LLAMA_DEPLOY_DEPLOYMENT_NAME") or "sec-filing-extraction"
 )
 # The name of the collection to use for storing extracted data. This will be qualified by the agent name.
 # When developing locally, this will use the _public collection (shared within the project), otherwise agent
