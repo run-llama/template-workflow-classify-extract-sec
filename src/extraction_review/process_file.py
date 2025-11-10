@@ -48,7 +48,7 @@ class FileClassifiedEvent(Event):
     reasoning: str | None = None
 
 
-class UIToast(Event):
+class Status(Event):
     level: Literal["info", "warning", "error"]
     message: str
 
@@ -118,7 +118,7 @@ class ProcessFileWorkflow(Workflow):
         except Exception as e:
             logger.error(f"Error downloading file {state.file_id}: {e}", exc_info=True)
             ctx.write_event_to_stream(
-                UIToast(
+                Status(
                     level="error",
                     message=f"Error downloading file {state.file_id}: {e}",
                 )
@@ -137,7 +137,7 @@ class ProcessFileWorkflow(Workflow):
         try:
             logger.info(f"Classifying file {state.filename}")
             ctx.write_event_to_stream(
-                UIToast(level="info", message=f"Classifying file {state.filename}")
+                Status(level="info", message=f"Classifying file {state.filename}")
             )
 
             # Initialize the classifier
@@ -211,7 +211,7 @@ class ProcessFileWorkflow(Workflow):
                         f"(confidence: {confidence}, reasoning: {reasoning})"
                     )
                     ctx.write_event_to_stream(
-                        UIToast(
+                        Status(
                             level="info",
                             message=f"Classified as {filing_type} SEC filing",
                         )
@@ -233,7 +233,7 @@ class ProcessFileWorkflow(Workflow):
                         f"Classification failed for {state.filename}, defaulting to 'other'"
                     )
                     ctx.write_event_to_stream(
-                        UIToast(
+                        Status(
                             level="warning",
                             message="Classification uncertain, using default schema",
                         )
@@ -251,7 +251,7 @@ class ProcessFileWorkflow(Workflow):
         except Exception as e:
             logger.error(f"Error classifying file {state.filename}: {e}", exc_info=True)
             ctx.write_event_to_stream(
-                UIToast(
+                Status(
                     level="warning",
                     message=f"Classification failed, using default schema: {e}",
                 )
@@ -276,7 +276,7 @@ class ProcessFileWorkflow(Workflow):
 
             logger.info(f"Using schema for filing type: {filing_type}")
             ctx.write_event_to_stream(
-                UIToast(
+                Status(
                     level="info",
                     message=f"Extracting data using {filing_type} schema",
                 )
@@ -294,7 +294,7 @@ class ProcessFileWorkflow(Workflow):
             )
             logger.info(f"Extracting data from file {state.filename}")
             ctx.write_event_to_stream(
-                UIToast(
+                Status(
                     level="info", message=f"Extracting data from file {state.filename}"
                 )
             )
@@ -326,7 +326,7 @@ class ProcessFileWorkflow(Workflow):
                 exc_info=True,
             )
             ctx.write_event_to_stream(
-                UIToast(
+                Status(
                     level="error",
                     message=f"Error extracting data from file {state.filename}: {e}",
                 )
@@ -341,7 +341,7 @@ class ProcessFileWorkflow(Workflow):
         try:
             logger.info(f"Recorded extracted data for file {event.data.file_name}")
             ctx.write_event_to_stream(
-                UIToast(
+                Status(
                     level="info",
                     message=f"Recorded extracted data for file {event.data.file_name}",
                 )
@@ -369,7 +369,7 @@ class ProcessFileWorkflow(Workflow):
                 exc_info=True,
             )
             ctx.write_event_to_stream(
-                UIToast(
+                Status(
                     level="error",
                     message=f"Error recording extracted data for file {event.data.file_name}: {e}",
                 )
