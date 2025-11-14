@@ -353,7 +353,7 @@ EXTRACT_CONFIG = ExtractConfig(
     # advanced. Only compatible with Premium mode.
     use_reasoning=False,
     cite_sources=False,
-    confidence_scores=True,
+    confidence_scores=False,
 )
 
 
