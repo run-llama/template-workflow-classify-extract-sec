@@ -2,6 +2,14 @@
 
 A LlamaAgents application for extracting structured information from SEC filings using LlamaClassify and LlamaExtract. This application automatically classifies SEC documents (10-K, 10-Q, 8-K, or other) and extracts relevant financial and business information tailored to each filing type.
 
+# Running the application
+
+This is a starter for LlamaAgents. See the [LlamaAgents (llamactl) getting started guide](https://developers.llamaindex.ai/python/llamaagents/llamactl/getting-started/) for context on local development and deployment.
+
+To run the application locally, clone this repo, install [`uv`](https://docs.astral.sh/uv/) and run `uvx llamactl serve`.
+
+This application can also be deployed directly to [LlamaCloud](https://cloud.llamaindex.ai) via the UI, or with `llamactl deployment create`.
+
 ## Features
 
 - **Intelligent Classification**: Uses LlamaClassify to automatically identify SEC filing types (10-K, 10-Q, 8-K, other)
@@ -14,9 +22,14 @@ A LlamaAgents application for extracting structured information from SEC filings
 - **Agent Data Storage**: Stores extracted data in LlamaCloud Agent Data for easy querying and analysis
 - **UI Integration**: Web interface for reviewing and managing extracted data
 
+## Example Documents
+
+You can find sample SEC filings PDFs to test the application with [here](https://github.com/run-llama/llama-datasets/tree/main/llama_agents/sec/).
+
+
 ## Configuration
 
-All main configuration is in `src/extraction_review/config.py`:
+All main configuration is in `src/extraction_review/config.py`
 
 ## How It Works
 
@@ -37,7 +50,7 @@ The application includes two main workflows:
 - **`process-file`** (`src/extraction_review/process_file.py`): Main workflow for processing SEC filings
   - Steps: download → classify → extract → store
   - Uses typed context to pass state between steps
-  - Streams progress updates to UI via `UIToast` events
+  - Streams progress updates to UI via `Status` events
 
 - **`metadata`** (`src/extraction_review/metadata_workflow.py`): Exposes configuration metadata to UI
   - Returns JSON schema and collection name for dynamic UI generation
