@@ -1,0 +1,1206 @@
+{
+  "classify": {
+    "rules": [
+      {
+        "type": "10-K",
+        "description": "Form 10-K is an annual report filed by public companies with the SEC. It provides a comprehensive summary of a company's financial performance for the year, including audited financial statements, management's discussion and analysis (MD&A), risk factors, business description, and executive compensation. Look for: 'Form 10-K', 'Annual Report', fiscal year references, audited financials."
+      },
+      {
+        "type": "10-Q",
+        "description": "Form 10-Q is a quarterly report filed by public companies with the SEC. It provides unaudited financial statements and management discussion for a specific quarter. Contains quarterly financial data, updates on business operations, and material changes. Look for: 'Form 10-Q', 'Quarterly Report', quarter references (Q1, Q2, Q3), unaudited statements."
+      },
+      {
+        "type": "8-K",
+        "description": "Form 8-K is a current report filed to announce material events or corporate changes. Used to notify investors of significant events like mergers, acquisitions, leadership changes, earnings releases, or other material corporate events that shareholders should know about. Look for: 'Form 8-K', 'Current Report', Item numbers (e.g., Item 1.01, Item 5.02), event dates, specific triggering events."
+      },
+      {
+        "type": "other",
+        "description": "Any other SEC filing type not covered by 10-K, 10-Q, or 8-K. This includes forms such as S-1 (IPO registration), DEF 14A (proxy statement), 13F (institutional holdings), SC 13D (beneficial ownership), and other SEC forms."
+      }
+    ],
+    "settings": {
+      "mode": "FAST",
+      "parsing_config": {
+        "max_pages": 5
+      }
+    }
+  },
+  "extract-10k": {
+    "extraction_agent_id": null,
+    "json_schema": {
+      "description": "Form 10-K is an annual report required by the SEC that provides a comprehensive\nsummary of a company's financial performance.",
+      "properties": {
+        "company_name": {
+          "description": "The full legal name of the company filing the document",
+          "title": "Company Name",
+          "type": "string"
+        },
+        "ticker_symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The stock ticker symbol of the company. May not be present for all filings.",
+          "title": "Ticker Symbol"
+        },
+        "cik": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Central Index Key - the unique identifier assigned by the SEC to the company",
+          "title": "Cik"
+        },
+        "filing_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The date the document was filed with the SEC (format: YYYY-MM-DD)",
+          "title": "Filing Date"
+        },
+        "fiscal_year_end": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The fiscal year end date for the company (format: YYYY-MM-DD)",
+          "title": "Fiscal Year End"
+        },
+        "sic_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Standard Industrial Classification code for the company's industry",
+          "title": "Sic Code"
+        },
+        "document_type": {
+          "default": "10-K",
+          "description": "Should always be '10-K'",
+          "title": "Document Type",
+          "type": "string"
+        },
+        "fiscal_year": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The fiscal year covered by this annual report (e.g., 2023)",
+          "title": "Fiscal Year"
+        },
+        "business_description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A 2-3 sentence summary of the company's business and operations",
+          "title": "Business Description"
+        },
+        "financial_metrics": {
+          "anyOf": [
+            {
+              "description": "Key financial metrics extracted from statements",
+              "properties": {
+                "total_revenue": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Total revenue/sales for the period. Include currency and amount (e.g., '$1.2B USD')",
+                  "title": "Total Revenue"
+                },
+                "net_income": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Net income/profit for the period. Include currency and amount",
+                  "title": "Net Income"
+                },
+                "total_assets": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Total assets as of the balance sheet date. Include currency and amount",
+                  "title": "Total Assets"
+                },
+                "total_liabilities": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Total liabilities as of the balance sheet date. Include currency and amount",
+                  "title": "Total Liabilities"
+                },
+                "stockholders_equity": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Total stockholders' equity. Include currency and amount",
+                  "title": "Stockholders Equity"
+                },
+                "cash_and_equivalents": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Cash and cash equivalents. Include currency and amount",
+                  "title": "Cash And Equivalents"
+                },
+                "earnings_per_share": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Earnings per share (EPS) for the period",
+                  "title": "Earnings Per Share"
+                }
+              },
+              "title": "FinancialMetrics",
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Key financial metrics from the annual statements"
+        },
+        "risk_factors": {
+          "anyOf": [
+            {
+              "items": {
+                "description": "Individual risk factor identified in the filing",
+                "properties": {
+                  "category": {
+                    "description": "Category of risk (e.g., 'Market Risk', 'Operational Risk', 'Legal Risk')",
+                    "title": "Category",
+                    "type": "string"
+                  },
+                  "description": {
+                    "description": "Brief description of the specific risk",
+                    "title": "Description",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "category",
+                  "description"
+                ],
+                "title": "RiskFactor",
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "List of material risk factors disclosed in the filing. Extract 3-5 most significant risks.",
+          "title": "Risk Factors"
+        },
+        "management_discussion_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "2-3 sentence summary of Management's Discussion and Analysis (MD&A) section",
+          "title": "Management Discussion Summary"
+        },
+        "legal_proceedings": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "List of significant legal proceedings or litigation mentioned",
+          "title": "Legal Proceedings"
+        },
+        "executive_officers": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Names and titles of key executive officers (CEO, CFO, etc.)",
+          "title": "Executive Officers"
+        },
+        "auditor_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Name of the independent registered public accounting firm",
+          "title": "Auditor Name"
+        },
+        "key_highlights": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "3-5 key highlights or notable items from the annual report",
+          "title": "Key Highlights"
+        }
+      },
+      "required": [
+        "company_name"
+      ],
+      "title": "Filing10K",
+      "type": "object"
+    },
+    "settings": {
+      "extraction_mode": "PREMIUM",
+      "system_prompt": null,
+      "citation_bbox": true,
+      "use_reasoning": false,
+      "cite_sources": true,
+      "confidence_scores": true
+    }
+  },
+  "extract-10q": {
+    "extraction_agent_id": null,
+    "json_schema": {
+      "description": "Form 10-Q is a quarterly report that provides a continuing view of a company's\nfinancial position during the year.",
+      "properties": {
+        "company_name": {
+          "description": "The full legal name of the company filing the document",
+          "title": "Company Name",
+          "type": "string"
+        },
+        "ticker_symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The stock ticker symbol of the company. May not be present for all filings.",
+          "title": "Ticker Symbol"
+        },
+        "cik": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Central Index Key - the unique identifier assigned by the SEC to the company",
+          "title": "Cik"
+        },
+        "filing_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The date the document was filed with the SEC (format: YYYY-MM-DD)",
+          "title": "Filing Date"
+        },
+        "fiscal_year_end": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The fiscal year end date for the company (format: YYYY-MM-DD)",
+          "title": "Fiscal Year End"
+        },
+        "sic_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Standard Industrial Classification code for the company's industry",
+          "title": "Sic Code"
+        },
+        "document_type": {
+          "default": "10-Q",
+          "description": "Should always be '10-Q'",
+          "title": "Document Type",
+          "type": "string"
+        },
+        "fiscal_quarter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The fiscal quarter covered (e.g., 'Q1 2024', 'Q2 2023')",
+          "title": "Fiscal Quarter"
+        },
+        "fiscal_year": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The fiscal year for this quarter (e.g., 2024)",
+          "title": "Fiscal Year"
+        },
+        "period_end_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The end date of the quarterly period (format: YYYY-MM-DD)",
+          "title": "Period End Date"
+        },
+        "financial_metrics": {
+          "anyOf": [
+            {
+              "description": "Key financial metrics extracted from statements",
+              "properties": {
+                "total_revenue": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Total revenue/sales for the period. Include currency and amount (e.g., '$1.2B USD')",
+                  "title": "Total Revenue"
+                },
+                "net_income": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Net income/profit for the period. Include currency and amount",
+                  "title": "Net Income"
+                },
+                "total_assets": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Total assets as of the balance sheet date. Include currency and amount",
+                  "title": "Total Assets"
+                },
+                "total_liabilities": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Total liabilities as of the balance sheet date. Include currency and amount",
+                  "title": "Total Liabilities"
+                },
+                "stockholders_equity": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Total stockholders' equity. Include currency and amount",
+                  "title": "Stockholders Equity"
+                },
+                "cash_and_equivalents": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Cash and cash equivalents. Include currency and amount",
+                  "title": "Cash And Equivalents"
+                },
+                "earnings_per_share": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Earnings per share (EPS) for the period",
+                  "title": "Earnings Per Share"
+                }
+              },
+              "title": "FinancialMetrics",
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Key financial metrics from the quarterly statements"
+        },
+        "year_over_year_revenue_change": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Year-over-year revenue change percentage or description (e.g., 'up 15%')",
+          "title": "Year Over Year Revenue Change"
+        },
+        "quarter_over_quarter_revenue_change": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Quarter-over-quarter revenue change percentage or description",
+          "title": "Quarter Over Quarter Revenue Change"
+        },
+        "management_discussion_summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "2-3 sentence summary of Management's Discussion and Analysis for the quarter",
+          "title": "Management Discussion Summary"
+        },
+        "material_changes_to_risks": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Summary of any material changes to risk factors since the last 10-K",
+          "title": "Material Changes To Risks"
+        },
+        "legal_proceedings_updates": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Updates to legal proceedings or new litigation since last filing",
+          "title": "Legal Proceedings Updates"
+        },
+        "key_highlights": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "3-5 key highlights or notable items from the quarterly report",
+          "title": "Key Highlights"
+        }
+      },
+      "required": [
+        "company_name"
+      ],
+      "title": "Filing10Q",
+      "type": "object"
+    },
+    "settings": {
+      "extraction_mode": "PREMIUM",
+      "system_prompt": null,
+      "citation_bbox": true,
+      "use_reasoning": false,
+      "cite_sources": true,
+      "confidence_scores": true
+    }
+  },
+  "extract-8k": {
+    "extraction_agent_id": null,
+    "json_schema": {
+      "description": "Form 8-K is a current report used to notify investors of significant events\nthat shareholders should know about.",
+      "properties": {
+        "company_name": {
+          "description": "The full legal name of the company filing the document",
+          "title": "Company Name",
+          "type": "string"
+        },
+        "ticker_symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The stock ticker symbol of the company. May not be present for all filings.",
+          "title": "Ticker Symbol"
+        },
+        "cik": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Central Index Key - the unique identifier assigned by the SEC to the company",
+          "title": "Cik"
+        },
+        "filing_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The date the document was filed with the SEC (format: YYYY-MM-DD)",
+          "title": "Filing Date"
+        },
+        "fiscal_year_end": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The fiscal year end date for the company (format: YYYY-MM-DD)",
+          "title": "Fiscal Year End"
+        },
+        "sic_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Standard Industrial Classification code for the company's industry",
+          "title": "Sic Code"
+        },
+        "document_type": {
+          "default": "8-K",
+          "description": "Should always be '8-K'",
+          "title": "Document Type",
+          "type": "string"
+        },
+        "event_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The date of the event being reported (format: YYYY-MM-DD)",
+          "title": "Event Date"
+        },
+        "event_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Type of event (e.g., 'Merger/Acquisition', 'Leadership Change', 'Earnings Release', 'Material Agreement')",
+          "title": "Event Type"
+        },
+        "item_numbers": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Item numbers from the 8-K form (e.g., ['1.01', '5.02']) indicating which sections are included",
+          "title": "Item Numbers"
+        },
+        "event_summary": {
+          "description": "2-4 sentence summary describing the material event being reported",
+          "title": "Event Summary",
+          "type": "string"
+        },
+        "event_details": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "More detailed description of the event and its implications",
+          "title": "Event Details"
+        },
+        "estimated_financial_impact": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Estimated financial impact of the event, if disclosed",
+          "title": "Estimated Financial Impact"
+        },
+        "related_parties": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Names of other companies, individuals, or entities involved in the event",
+          "title": "Related Parties"
+        },
+        "material_exhibits": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Description of significant exhibits filed with the 8-K (e.g., 'Press Release', 'Material Agreement')",
+          "title": "Material Exhibits"
+        },
+        "contains_forward_looking_statements": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Whether the filing contains forward-looking statements",
+          "title": "Contains Forward Looking Statements"
+        },
+        "investment_implications": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "1-2 sentence assessment of potential implications for investors",
+          "title": "Investment Implications"
+        }
+      },
+      "required": [
+        "company_name",
+        "event_summary"
+      ],
+      "title": "Filing8K",
+      "type": "object"
+    },
+    "settings": {
+      "extraction_mode": "PREMIUM",
+      "system_prompt": null,
+      "citation_bbox": true,
+      "use_reasoning": false,
+      "cite_sources": true,
+      "confidence_scores": true
+    }
+  },
+  "extract-other": {
+    "extraction_agent_id": null,
+    "json_schema": {
+      "description": "Catch-all schema for other SEC filing types (e.g., S-1, DEF 14A, 13F, etc.)",
+      "properties": {
+        "company_name": {
+          "description": "The full legal name of the company filing the document",
+          "title": "Company Name",
+          "type": "string"
+        },
+        "ticker_symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The stock ticker symbol of the company. May not be present for all filings.",
+          "title": "Ticker Symbol"
+        },
+        "cik": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Central Index Key - the unique identifier assigned by the SEC to the company",
+          "title": "Cik"
+        },
+        "filing_date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The date the document was filed with the SEC (format: YYYY-MM-DD)",
+          "title": "Filing Date"
+        },
+        "fiscal_year_end": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The fiscal year end date for the company (format: YYYY-MM-DD)",
+          "title": "Fiscal Year End"
+        },
+        "sic_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Standard Industrial Classification code for the company's industry",
+          "title": "Sic Code"
+        },
+        "document_type": {
+          "description": "The type of SEC filing (e.g., 'S-1', 'DEF 14A', '13F', 'SC 13D')",
+          "title": "Document Type",
+          "type": "string"
+        },
+        "filing_purpose": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The purpose of this filing type (e.g., 'IPO Registration', 'Proxy Statement', 'Insider Holdings')",
+          "title": "Filing Purpose"
+        },
+        "summary": {
+          "description": "3-4 sentence summary of the filing's key content and purpose",
+          "title": "Summary",
+          "type": "string"
+        },
+        "key_information": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "List of 3-7 key pieces of information from the filing",
+          "title": "Key Information"
+        },
+        "financial_data": {
+          "anyOf": [
+            {
+              "description": "Key financial metrics extracted from statements",
+              "properties": {
+                "total_revenue": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Total revenue/sales for the period. Include currency and amount (e.g., '$1.2B USD')",
+                  "title": "Total Revenue"
+                },
+                "net_income": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Net income/profit for the period. Include currency and amount",
+                  "title": "Net Income"
+                },
+                "total_assets": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Total assets as of the balance sheet date. Include currency and amount",
+                  "title": "Total Assets"
+                },
+                "total_liabilities": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Total liabilities as of the balance sheet date. Include currency and amount",
+                  "title": "Total Liabilities"
+                },
+                "stockholders_equity": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Total stockholders' equity. Include currency and amount",
+                  "title": "Stockholders Equity"
+                },
+                "cash_and_equivalents": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Cash and cash equivalents. Include currency and amount",
+                  "title": "Cash And Equivalents"
+                },
+                "earnings_per_share": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "default": null,
+                  "description": "Earnings per share (EPS) for the period",
+                  "title": "Earnings Per Share"
+                }
+              },
+              "title": "FinancialMetrics",
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Any relevant financial metrics present in the filing"
+        },
+        "material_events": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "List of any material events or transactions described",
+          "title": "Material Events"
+        },
+        "parties_involved": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Other parties mentioned (companies, executives, investors, etc.)",
+          "title": "Parties Involved"
+        },
+        "investment_relevance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Brief note on why this filing might be relevant for investment analysis",
+          "title": "Investment Relevance"
+        }
+      },
+      "required": [
+        "company_name",
+        "document_type",
+        "summary"
+      ],
+      "title": "FilingOther",
+      "type": "object"
+    },
+    "settings": {
+      "extraction_mode": "PREMIUM",
+      "system_prompt": null,
+      "citation_bbox": true,
+      "use_reasoning": false,
+      "cite_sources": true,
+      "confidence_scores": true
+    }
+  }
+}
