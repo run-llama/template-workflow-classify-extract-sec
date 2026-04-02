@@ -391,7 +391,7 @@ class ClassifyParsingConfig(BaseModel):
 
     lang: str = Field(description="two-letter ISO 639 language code", default="en")
     max_pages: int | None = None
-    target_pages: list[int] | None = None
+    target_pages: str | None = None
 
 
 class ClassifySettings(BaseModel):
