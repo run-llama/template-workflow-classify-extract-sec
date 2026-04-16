@@ -1,5 +1,7 @@
 {
   "classify": {
+    "product_type": "classify_v2",
+    "configuration_id": null,
     "rules": [
       {
         "type": "10-K",
@@ -18,16 +20,15 @@
         "description": "Any other SEC filing type not covered by 10-K, 10-Q, or 8-K. This includes forms such as S-1 (IPO registration), DEF 14A (proxy statement), 13F (institutional holdings), SC 13D (beneficial ownership), and other SEC forms."
       }
     ],
-    "settings": {
-      "mode": "FAST",
-      "parsing_config": {
-        "max_pages": 5
-      }
+    "mode": "FAST",
+    "parsing_configuration": {
+      "max_pages": 5
     }
   },
   "extract-10k": {
-    "extraction_agent_id": null,
-    "json_schema": {
+    "product_type": "extract_v2",
+    "configuration_id": null,
+    "data_schema": {
       "description": "Form 10-K is an annual report required by the SEC that provides a comprehensive\nsummary of a company's financial performance.",
       "properties": {
         "company_name": {
@@ -354,18 +355,16 @@
       "title": "Filing10K",
       "type": "object"
     },
-    "settings": {
-      "extraction_mode": "PREMIUM",
-      "system_prompt": null,
-      "citation_bbox": true,
-      "use_reasoning": false,
-      "cite_sources": true,
-      "confidence_scores": true
-    }
+    "tier": "agentic",
+    "extraction_target": "per_doc",
+    "system_prompt": null,
+    "cite_sources": true,
+    "confidence_scores": true
   },
   "extract-10q": {
-    "extraction_agent_id": null,
-    "json_schema": {
+    "product_type": "extract_v2",
+    "configuration_id": null,
+    "data_schema": {
       "description": "Form 10-Q is a quarterly report that provides a continuing view of a company's\nfinancial position during the year.",
       "properties": {
         "company_name": {
@@ -681,18 +680,16 @@
       "title": "Filing10Q",
       "type": "object"
     },
-    "settings": {
-      "extraction_mode": "PREMIUM",
-      "system_prompt": null,
-      "citation_bbox": true,
-      "use_reasoning": false,
-      "cite_sources": true,
-      "confidence_scores": true
-    }
+    "tier": "agentic",
+    "extraction_target": "per_doc",
+    "system_prompt": null,
+    "cite_sources": true,
+    "confidence_scores": true
   },
   "extract-8k": {
-    "extraction_agent_id": null,
-    "json_schema": {
+    "product_type": "extract_v2",
+    "configuration_id": null,
+    "data_schema": {
       "description": "Form 8-K is a current report used to notify investors of significant events\nthat shareholders should know about.",
       "properties": {
         "company_name": {
@@ -910,18 +907,16 @@
       "title": "Filing8K",
       "type": "object"
     },
-    "settings": {
-      "extraction_mode": "PREMIUM",
-      "system_prompt": null,
-      "citation_bbox": true,
-      "use_reasoning": false,
-      "cite_sources": true,
-      "confidence_scores": true
-    }
+    "tier": "agentic",
+    "extraction_target": "per_doc",
+    "system_prompt": null,
+    "cite_sources": true,
+    "confidence_scores": true
   },
   "extract-other": {
-    "extraction_agent_id": null,
-    "json_schema": {
+    "product_type": "extract_v2",
+    "configuration_id": null,
+    "data_schema": {
       "description": "Catch-all schema for other SEC filing types (e.g., S-1, DEF 14A, 13F, etc.)",
       "properties": {
         "company_name": {
@@ -1194,13 +1189,21 @@
       "title": "FilingOther",
       "type": "object"
     },
-    "settings": {
-      "extraction_mode": "PREMIUM",
-      "system_prompt": null,
-      "citation_bbox": true,
-      "use_reasoning": false,
-      "cite_sources": true,
-      "confidence_scores": true
-    }
+    "tier": "agentic",
+    "extraction_target": "per_doc",
+    "system_prompt": null,
+    "cite_sources": true,
+    "confidence_scores": true
+  },
+  "parse": {
+    "product_type": "parse_v2",
+    "configuration_id": null,
+    "tier": "agentic",
+    "version": "latest"
+  },
+  "split": {
+    "product_type": "split_v1",
+    "configuration_id": null,
+    "categories": []
   }
 }

@@ -2,24 +2,19 @@
 Configuration for the extraction review application.
 
 Configuration is loaded from configs/config.json via ResourceConfig.
-The unified config contains both extraction settings and the JSON schema.
-
-Extraction can run in two modes, controlled by the "extraction_agent_id" field
-in configs/config.json:
-
-  - Local (default): extraction_agent_id is null. Uses the json_schema and
-    settings defined in config.json directly via extraction.run().
-
-  - Remote agent: extraction_agent_id is set to a LlamaCloud extraction agent
-    ID. Uses extraction.jobs.extract(extraction_agent_id=...) which delegates
-    schema and settings to the remote agent. The local json_schema and settings
-    in config.json are ignored — both extraction and the metadata workflow fetch
-    the schema directly from the remote agent.
+Each top-level key in config.json maps to an SDK product-configuration type:
+the discriminated union members returned by `client.configurations.retrieve`.
+Each template-side subclass adds an optional `configuration_id` so a key
+can either carry an inline snapshot OR point at a saved platform config.
 """
 
 import logging
-from typing import Any, Literal
 
+from llama_cloud.types.beta.split_category import SplitCategory
+from llama_cloud.types.classify_v2_parameters import ClassifyV2Parameters, Rule
+from llama_cloud.types.extract_v2_parameters import ExtractV2Parameters
+from llama_cloud.types.parse_v2_parameters import ParseV2Parameters
+from llama_cloud.types.split_v1_parameters import SplitV1Parameters
 from pydantic import BaseModel, Field
 
 from .json_util import create_union_schema as create_union_schema
@@ -351,58 +346,48 @@ FILING_SCHEMAS = {
 }
 
 
-class ExtractSettings(BaseModel):
-    extraction_mode: Literal["FAST", "PREMIUM", "MULTIMODAL"]
-    system_prompt: str | None = None
-    citation_bbox: bool = False
-    use_reasoning: bool = False
-    cite_sources: bool = False
-    confidence_scores: bool = False
+class ExtractConfig(ExtractV2Parameters):
+    """Extract product configuration.
+
+    Inherits the SDK `ExtractV2Parameters` shape. Set `configuration_id`
+    to a saved LlamaCloud configuration id (cfg-...) to pull parameters
+    from the platform instead of using the local values.
+    """
+
+    configuration_id: str | None = None
 
 
-class ExtractConfig(BaseModel):
-    json_schema: dict[str, Any]
-    settings: ExtractSettings
-    # Set this to a LlamaCloud extraction agent ID to use a remote agent's
-    # schema and settings instead of the local json_schema/settings above.
-    # When set, extraction uses extraction.jobs.extract(extraction_agent_id=...)
-    # and the local settings are ignored for extraction.
-    extraction_agent_id: str | None = None
+class ClassifyConfig(ClassifyV2Parameters):
+    """Classify product configuration.
+
+    Inherits the SDK `ClassifyV2Parameters` shape. Overrides `rules` default
+    to `[]` so an unused classify slot validates without a rule list.
+    """
+
+    rules: list[Rule] = []
+    configuration_id: str | None = None
 
 
-class JsonSchema(BaseModel):
-    type: str = "object"
-    properties: dict[str, Any] = {}
-    required: list[str] = []
+class ParseConfig(ParseV2Parameters):
+    """Parse product configuration."""
 
-    def to_dict(self) -> dict[str, Any]:
-        return self.model_dump(exclude_none=True)
+    configuration_id: str | None = None
 
 
-class ClassifyRule(BaseModel):
-    """Classify rule, with type (rule target) and description (rule description)"""
+class SplitConfig(SplitV1Parameters):
+    """Split product configuration."""
 
-    type: str
-    description: str
-
-
-class ClassifyParsingConfig(BaseModel):
-    """Parsing config for Classify"""
-
-    lang: str = Field(description="two-letter ISO 639 language code", default="en")
-    max_pages: int | None = None
-    target_pages: str | None = None
+    categories: list[SplitCategory] = []
+    configuration_id: str | None = None
 
 
-class ClassifySettings(BaseModel):
-    """Extra settings for Classify"""
+class Config(BaseModel):
+    """Root configuration model for configs/config.json."""
 
-    mode: Literal["FAST", "MULTIMODAL"] = "FAST"
-    parsing_config: ClassifyParsingConfig = ClassifyParsingConfig()
-
-
-class ClassifyConfig(BaseModel):
-    """Classify configuration, with rules and settings"""
-
-    rules: list[ClassifyRule] = []
-    settings: ClassifySettings = ClassifySettings()
+    classify: ClassifyConfig
+    extract_10k: ExtractConfig = Field(alias="extract-10k")
+    extract_10q: ExtractConfig = Field(alias="extract-10q")
+    extract_8k: ExtractConfig = Field(alias="extract-8k")
+    extract_other: ExtractConfig = Field(alias="extract-other")
+    parse: ParseConfig
+    split: SplitConfig
