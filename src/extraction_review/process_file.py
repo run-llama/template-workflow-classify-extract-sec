@@ -392,7 +392,7 @@ class ProcessFileWorkflow(Workflow):
                     f"Removed {delete_result.deleted_count} existing record(s) "
                     f"for file {extracted_data.file_name}"
                 )
-        item = await llama_cloud_client.beta.agent_data.agent_data(
+        item = await llama_cloud_client.beta.agent_data.create(
             data=data_dict,
             deployment_name=agent_name or "_public",
             collection=EXTRACTED_DATA_COLLECTION,
