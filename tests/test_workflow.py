@@ -4,7 +4,12 @@ import pytest
 from extraction_review.config import EXTRACTED_DATA_COLLECTION
 from extraction_review.metadata_workflow import DISCRIMINATOR_FIELD, MetadataResponse
 from extraction_review.metadata_workflow import workflow as metadata_workflow
-from extraction_review.process_file import FileEvent, Status
+from extraction_review.process_file import (
+    ExtractedEvent,
+    ExtractedInvalidEvent,
+    FileEvent,
+    Status,
+)
 from extraction_review.process_file import workflow as process_file_workflow
 from llama_cloud_fake import FakeLlamaCloudServer
 from workflows.events import StartEvent
@@ -70,3 +75,37 @@ async def test_metadata_workflow() -> None:
     assert result.discriminator_field == DISCRIMINATOR_FIELD
     assert set(result.schemas.keys()) == FILING_TYPES
     assert DISCRIMINATOR_FIELD in result.json_schema.get("properties", {})
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(
+    not FAKE_HAS_CLASSIFY_V2,
+    reason="llama-cloud-fake < 0.1.1 does not mock classify v2",
+)
+async def test_extraction_uses_the_classified_schema(
+    monkeypatch: pytest.MonkeyPatch,
+    fake: FakeLlamaCloudServer,
+) -> None:
+    """The extract job runs the schema of the filing type it was classified as.
+
+    Extracting with one filing type's schema and validating against another's
+    fails on every field the two schemas don't share, so the result lands as
+    invalid no matter what the document says.
+    """
+    monkeypatch.setenv("LLAMA_CLOUD_API_KEY", "fake-api-key")
+    file_id = fake.files.preload(path="tests/files/test.pdf")
+
+    handler = process_file_workflow.run(start_event=FileEvent(file_id=file_id))
+    extracted: list[ExtractedEvent | ExtractedInvalidEvent] = []
+    async for event in handler.stream_events():
+        if isinstance(event, (ExtractedEvent, ExtractedInvalidEvent)):
+            extracted.append(event)
+    await handler
+
+    assert len(extracted) == 1
+    event = extracted[0]
+    assert isinstance(event, ExtractedEvent), (
+        "extracted data failed validation against the classified filing schema"
+    )
+    assert event.data.metadata is not None
+    assert event.data.metadata["classification"] in FILING_TYPES

@@ -34,8 +34,7 @@ export default function ItemPage() {
 
   // Determine the correct schema based on classification
   const classificationData = itemHookData.item?.data as
-    | ExtractedData<any>
-    | undefined;
+    ExtractedData<any> | undefined;
   const classification = (
     (classificationData?.metadata?.classification as string | undefined) ||
     "10-K"
@@ -58,8 +57,7 @@ export default function ItemPage() {
 
   useEffect(() => {
     const extractedData = itemHookData.item?.data as
-      | ExtractedData<unknown>
-      | undefined;
+      ExtractedData<unknown> | undefined;
     const fileName = extractedData?.file_name;
     if (fileName) {
       setBreadcrumbs([

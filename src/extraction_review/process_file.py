@@ -79,28 +79,87 @@ async def _wait_for_classify(client: AsyncLlamaCloud, job_id: str) -> Any:
     )
 
 
+class ExtractConfigs(BaseModel):
+    """Extraction settings for every SEC filing type."""
+
+    by_filing_type: dict[str, ExtractConfig]
+
+    def for_filing_type(self, filing_type: str) -> ExtractConfig:
+        """Settings for a filing type, falling back to the catch-all config."""
+        return self.by_filing_type.get(filing_type, self.by_filing_type["other"])
+
+
+async def get_extract_configs(
+    extract_10k: Annotated[
+        ExtractConfig,
+        ResourceConfig(
+            config_file="configs/config.json",
+            path_selector="extract-10k",
+            label="10-K Extraction",
+        ),
+    ],
+    extract_10q: Annotated[
+        ExtractConfig,
+        ResourceConfig(
+            config_file="configs/config.json",
+            path_selector="extract-10q",
+            label="10-Q Extraction",
+        ),
+    ],
+    extract_8k: Annotated[
+        ExtractConfig,
+        ResourceConfig(
+            config_file="configs/config.json",
+            path_selector="extract-8k",
+            label="8-K Extraction",
+        ),
+    ],
+    extract_other: Annotated[
+        ExtractConfig,
+        ResourceConfig(
+            config_file="configs/config.json",
+            path_selector="extract-other",
+            label="Other Extraction",
+        ),
+    ],
+) -> ExtractConfigs:
+    """Extraction settings keyed by SEC filing type.
+
+    One resource shared by the step that starts the job and the step that
+    validates its result, so both read the same schema for a given filing.
+    """
+    return ExtractConfigs(
+        by_filing_type={
+            "10-K": extract_10k,
+            "10-Q": extract_10q,
+            "8-K": extract_8k,
+            "other": extract_other,
+        }
+    )
+
+
 class ProcessFileWorkflow(Workflow):
     """Classify an SEC filing and extract the matching structured schema."""
 
     @step()
-    async def start_extraction(
+    async def classify_file(
         self,
         event: FileEvent,
         ctx: Context[ExtractionState],
         llama_cloud_client: Annotated[
             AsyncLlamaCloud, Resource(get_llama_cloud_client)
         ],
-        extract_config: Annotated[
-            ExtractConfig,
+        classify_config: Annotated[
+            ClassifyConfig,
             ResourceConfig(
                 config_file="configs/config.json",
-                path_selector="extract-10k",
-                label="Default Extraction Settings",
-                description="Default extraction config (10-K); actual schema selected after classification",
+                path_selector="classify",
+                label="Classification Rules",
+                description="Rules for classifying SEC filing types",
             ),
         ],
-    ) -> ExtractJobStartedEvent:
-        """Start extraction job for the document."""
+    ) -> FileClassifiedEvent:
+        """Classify the SEC filing so extraction can use the matching schema."""
         file_id = event.file_id
         logger.info(f"Running file {file_id}")
 
@@ -122,75 +181,26 @@ class ProcessFileWorkflow(Workflow):
             )
             raise e
 
-        logger.info(f"Extracting data from file {filename}")
-        ctx.write_event_to_stream(
-            Status(level="info", message=f"Extracting data from file {filename}")
-        )
-
-        if extract_config.configuration_id:
-            extract_job = await llama_cloud_client.extract.create(
-                file_input=file_id,
-                configuration_id=extract_config.configuration_id,
-                project_id=project_id,
-            )
-        else:
-            extract_job = await llama_cloud_client.extract.create(
-                file_input=file_id,
-                configuration=extract_config.model_dump(
-                    exclude={"configuration_id", "product_type"},
-                    exclude_none=True,
-                ),
-                project_id=project_id,
-            )
-
-        file_hash = event.file_hash or file_metadata.external_file_id
-
         async with ctx.store.edit_state() as state:
             state.file_id = file_id
             state.filename = filename
-            state.file_hash = file_hash
-            state.extract_job_id = extract_job.id
-
-        return ExtractJobStartedEvent()
-
-    @step()
-    async def classify_file(
-        self,
-        event: ExtractJobStartedEvent,
-        ctx: Context[ExtractionState],
-        llama_cloud_client: Annotated[
-            AsyncLlamaCloud, Resource(get_llama_cloud_client)
-        ],
-        classify_config: Annotated[
-            ClassifyConfig,
-            ResourceConfig(
-                config_file="configs/config.json",
-                path_selector="classify",
-                label="Classification Rules",
-                description="Rules for classifying SEC filing types",
-            ),
-        ],
-    ) -> FileClassifiedEvent:
-        """Classify the SEC filing document type in parallel with extraction."""
-        state = await ctx.store.get_state()
-        if state.file_id is None or state.filename is None:
-            raise ValueError("File ID or filename is not set")
+            state.file_hash = event.file_hash or file_metadata.external_file_id
 
         try:
-            logger.info(f"Classifying file {state.filename}")
+            logger.info(f"Classifying file {filename}")
             ctx.write_event_to_stream(
-                Status(level="info", message=f"Classifying file {state.filename}")
+                Status(level="info", message=f"Classifying file {filename}")
             )
 
             if classify_config.configuration_id:
                 classify_job = await llama_cloud_client.classify.create(
-                    file_input=state.file_id,
+                    file_input=file_id,
                     configuration_id=classify_config.configuration_id,
                     project_id=project_id,
                 )
             else:
                 classify_job = await llama_cloud_client.classify.create(
-                    file_input=state.file_id,
+                    file_input=file_id,
                     configuration=classify_config.model_dump(
                         exclude={"configuration_id", "product_type"},
                         exclude_none=True,
@@ -202,7 +212,7 @@ class ProcessFileWorkflow(Workflow):
 
             if completed.status == "FAILED" or completed.result is None:
                 logger.warning(
-                    f"Classification did not resolve for {state.filename}, defaulting to 'other'"
+                    f"Classification did not resolve for {filename}, defaulting to 'other'"
                 )
                 ctx.write_event_to_stream(
                     Status(
@@ -220,7 +230,7 @@ class ProcessFileWorkflow(Workflow):
             reasoning = result.reasoning
 
             logger.info(
-                f"Classified {state.filename} as {filing_type} "
+                f"Classified {filename} as {filing_type} "
                 f"(confidence: {confidence}, reasoning: {reasoning})"
             )
             ctx.write_event_to_stream(
@@ -242,7 +252,7 @@ class ProcessFileWorkflow(Workflow):
             )
 
         except Exception as e:
-            logger.error(f"Error classifying file {state.filename}: {e}", exc_info=True)
+            logger.error(f"Error classifying file {filename}: {e}", exc_info=True)
             ctx.write_event_to_stream(
                 Status(
                     level="warning",
@@ -254,59 +264,68 @@ class ProcessFileWorkflow(Workflow):
             return FileClassifiedEvent(filing_type="other")
 
     @step()
-    async def complete_extraction(
+    async def start_extraction(
         self,
         event: FileClassifiedEvent,
         ctx: Context[ExtractionState],
         llama_cloud_client: Annotated[
             AsyncLlamaCloud, Resource(get_llama_cloud_client)
         ],
-        extract_10k: Annotated[
-            ExtractConfig,
-            ResourceConfig(
-                config_file="configs/config.json",
-                path_selector="extract-10k",
-                label="10-K Extraction",
-            ),
+        extract_configs: Annotated[ExtractConfigs, Resource(get_extract_configs)],
+    ) -> ExtractJobStartedEvent:
+        """Start the extraction job using the classified filing type's schema."""
+        state = await ctx.store.get_state()
+        if state.file_id is None or state.filename is None:
+            raise ValueError("File ID or filename is not set")
+
+        extract_config = extract_configs.for_filing_type(event.filing_type)
+
+        logger.info(f"Extracting data from file {state.filename}")
+        ctx.write_event_to_stream(
+            Status(
+                level="info",
+                message=f"Extracting data from file {state.filename} as {event.filing_type}",
+            )
+        )
+
+        if extract_config.configuration_id:
+            extract_job = await llama_cloud_client.extract.create(
+                file_input=state.file_id,
+                configuration_id=extract_config.configuration_id,
+                project_id=project_id,
+            )
+        else:
+            extract_job = await llama_cloud_client.extract.create(
+                file_input=state.file_id,
+                configuration=extract_config.model_dump(
+                    exclude={"configuration_id", "product_type"},
+                    exclude_none=True,
+                ),
+                project_id=project_id,
+            )
+
+        async with ctx.store.edit_state() as state:
+            state.extract_job_id = extract_job.id
+
+        return ExtractJobStartedEvent()
+
+    @step()
+    async def complete_extraction(
+        self,
+        event: ExtractJobStartedEvent,
+        ctx: Context[ExtractionState],
+        llama_cloud_client: Annotated[
+            AsyncLlamaCloud, Resource(get_llama_cloud_client)
         ],
-        extract_10q: Annotated[
-            ExtractConfig,
-            ResourceConfig(
-                config_file="configs/config.json",
-                path_selector="extract-10q",
-                label="10-Q Extraction",
-            ),
-        ],
-        extract_8k: Annotated[
-            ExtractConfig,
-            ResourceConfig(
-                config_file="configs/config.json",
-                path_selector="extract-8k",
-                label="8-K Extraction",
-            ),
-        ],
-        extract_other: Annotated[
-            ExtractConfig,
-            ResourceConfig(
-                config_file="configs/config.json",
-                path_selector="extract-other",
-                label="Other Extraction",
-            ),
-        ],
+        extract_configs: Annotated[ExtractConfigs, Resource(get_extract_configs)],
     ) -> StopEvent:
         """Wait for extraction to complete, validate results, and save for review."""
         state = await ctx.store.get_state()
         if state.extract_job_id is None:
             raise ValueError("Job ID cannot be null when waiting for its completion")
 
-        extract_configs = {
-            "10-K": extract_10k,
-            "10-Q": extract_10q,
-            "8-K": extract_8k,
-            "other": extract_other,
-        }
         filing_type = state.filing_type or "other"
-        extract_config = extract_configs.get(filing_type, extract_other)
+        extract_config = extract_configs.for_filing_type(filing_type)
 
         await llama_cloud_client.extract.wait_for_completion(
             state.extract_job_id,
